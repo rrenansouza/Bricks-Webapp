@@ -1,0 +1,194 @@
+Você é um desenvolvedor e designer UI/UX sênior. Quero que você atualize o frontend do meu web app chamado Bricks (para personal trainers e alunos) com as seguintes instruções, garantindo que tudo funcione no desktop e no mobile, com o mesmo padrão de design já adotado (minimalista, estiloso, intimista), usando a paleta:
+
+Principal: #002c2b
+
+Secundária (botões e títulos): #b6ff00
+
+Terciária (subtítulos e demais): #f7f7f7
+
+🎨 1. AJUSTES DE DESIGN & IDENTIDADE VISUAL
+
+Substituir o logo atual pela imagem Bricks em anexo, removendo o fundo e aplicando uma versão limpa que combine com o tema dark minimal.
+
+Atualizar a Hero section do Bricks:
+
+Inserir o vídeo Herovideo (anexo) como background de tela cheia, ocupando 100% da section.
+
+Aplicar um overlay escuro suave (fade) para criar contraste e deixar o texto e os botões mais imponentes.
+
+O vídeo deve:
+
+ficar em loop infinito
+
+autoplay
+
+ser mutado
+
+ser responsivo, sem distorcer no mobile.
+
+Aplicar o mesmo tratamento à section "Pronto para começar", usando o vídeo Trainingvideo como fundo, também em loop, com overlay escuro.
+
+Garantir que no mobile o vídeo de fundo não quebre o layout nem prejudique a leitura dos textos/botões.
+
+🔎 2. MELHORIAS NA FUNÇÃO "EXPLORAR PERSONAIS"
+2.1 Filtros realmente funcionais
+
+Implementar filtros funcionais (integrados à API do Bricks) para:
+
+Buscar por nome do personal
+
+Buscar por especialidade
+
+Filtro de especialidade, com personas pré-criadas:
+
+Criar pelo menos 5 personal trainers fictícios por especialidade, cada um com:
+
+foto (avatar/foto realista)
+
+nome
+
+especialidade principal e secundária
+
+localização
+
+avaliação média
+
+número de alunos
+
+bio curta
+
+Filtro por cidade com cidades reais do Brasil (ex.: São Paulo, Rio de Janeiro, Brasília, Belo Horizonte, Curitiba, Porto Alegre, Recife, Salvador, Goiânia, Florianópolis, Campinas etc.).
+
+2.2 Cards dos personal trainers
+
+Cada card na listagem de “Explorar Personais” do Bricks deve exibir:
+
+Foto do personal
+
+Nome
+
+Avaliação em estrelas ⭐
+
+Quantidade de alunos
+
+Especialidades principais
+
+Localização (cidade/bairro)
+
+E um botão ou link “Ver perfil” estilizado com #b6ff00
+
+Aplicar um hover moderno (leve aumento de escala, sombra suave).
+
+2.3 Página de perfil completo do personal
+
+Ao clicar em um card, abrir a página de perfil do personal contendo:
+
+Nome completo
+
+Número do CREF
+
+Texto “Sobre mim” (bio detalhada)
+
+Lista de especialidades
+
+Section de fotos e vídeos que o personal pode adicionar (galeria)
+
+Avaliações dos alunos:
+
+rating em estrelas
+
+comentários curtos
+
+Serviços prestados (ex.: consultoria online, treino presencial, acompanhamento mensal)
+
+Valores das aulas (preço por sessão, planos etc.)
+
+Experiência profissional (timeline ou lista)
+
+Regiões que atende (bairros/cidades/zona da cidade)
+
+2.4 Formulário “Solicitar orçamento”
+
+Ao lado (no desktop) ou abaixo (no mobile), adicionar um formulário para contato com o personal contendo:
+
+Campo de texto grande: “Como posso te ajudar?”
+
+Nome completo
+
+WhatsApp
+
+E-mail
+
+Dropdown: “Como prefere receber a resposta?” com as opções:
+
+Email
+
+Whatsapp
+
+Ligação
+
+Botão destacado: “Enviar solicitação”
+
+Ao enviar:
+
+validar os campos
+
+enviar os dados para o backend (endpoint de orçamentos do Bricks)
+
+preparar lógica para notificar o personal (pelo menos salvar no banco agora).
+
+🎯 3. DIRETRIZES DE DESIGN PARA ESSAS TELAS (BRICKS)
+
+Estilo dark minimal premium com fundo #002c2b.
+
+Títulos e CTAs em #b6ff00, com tipografia forte.
+
+Textos, subtítulos e rótulos em #f7f7f7.
+
+Bastante espaço negativo, cards com cantos arredondados e sombra suave.
+
+No mobile:
+
+layout em coluna, botões full-width, fonte maior
+
+navegação simples e clara
+
+No desktop:
+
+grid de 3–4 colunas para cards
+
+possibilidade de layout com perfil à esquerda e formulário à direita.
+
+⚙️ 4. IMPLEMENTAÇÃO & CÓDIGO
+
+Usar componentes reutilizáveis para:
+
+card de personal
+
+card de avaliação
+
+galeria de mídia
+
+formulário de orçamento
+
+Implementar os filtros de forma funcional, integrando com as rotas da API (ex.: /personals, /personals/search, /quotes).
+
+Otimizar o carregamento dos vídeos de fundo (ex.: poster, lazy, fallback se o vídeo não carregar).
+
+Garantir que o código permaneça limpo, organizado e bem comentado.
+
+📦 5. ENTREGA ESPERADA
+
+Hero do Bricks com vídeo de fundo + overlay + texto e botões legíveis.
+
+Section “Pronto para começar” também com vídeo Trainingvideo em loop.
+
+Página “Explorar Personais” com filtros funcionais e cards completos.
+
+Página de perfil do personal com todas as seções descritas.
+
+Formulário de solicitação de orçamento integrado.
+
+Design 100% responsivo e consistente com a identidade visual do Bricks.
+
+Código pronto para uso em produção, em React/Next + CSS/Tailwind (ou a stack visual já usada no projeto).
