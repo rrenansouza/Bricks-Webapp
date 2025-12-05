@@ -93,12 +93,16 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### December 5, 2025
-- Added text logo alongside main icon logo in headers (landing page, marketplace, footer)
-- Implemented support dialog with contact form (name, email, subject, message)
-- Added WhatsApp integration (number: 5511945296363) - direct button and form submission
+- **UI Overhaul**: Replaced logo images with stylized "BRICKS" text using Inter font (font-black, tracking-tighter)
+- **Support Button**: Changed from headphones icon to "Suporte" text button
+- **Database Seeding**: Created comprehensive seed script (server/seed.ts) with 40 personal trainers:
+  - 5 trainers per specialty (Hipertrofia, Emagrecimento, Funcional, Terceira Idade, Mobilidade, Corrida, Pilates, Musculação)
+  - Realistic Brazilian names, cities, bios, CREF numbers, ratings, and prices
+  - Execute with: `npx tsx server/seed.ts`
+- Support dialog with contact form (name, email, subject, message) - sends to WhatsApp
+- WhatsApp integration (number: 5511945296363) - direct button and form submission
 - Fixed search input interruption using React 18's useDeferredValue for debounced filtering
 - Fixed PersonalProfile interface to match database schema (specialties array, city, averagePrice)
-- Images use CSS invert filter for proper display on dark background
 
 **Security**:
 - bcryptjs for password hashing

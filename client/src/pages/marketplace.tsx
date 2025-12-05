@@ -34,12 +34,9 @@ import {
   ChevronRight,
   Award,
   Clock,
-  Headphones,
   MessageCircle,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
-import logoUrl from "@assets/Brickslogo_1764955332419.png";
-import textLogoUrl from "@assets/text_logo_1764957861567.png";
 
 const WHATSAPP_NUMBER = "5511945296363";
 
@@ -67,12 +64,14 @@ interface PersonalProfile {
 }
 
 const SPECIALTIES = [
-  "Musculação",
-  "Crossfit",
+  "Hipertrofia",
+  "Emagrecimento",
   "Funcional",
+  "Terceira Idade",
+  "Mobilidade",
+  "Corrida",
   "Pilates",
-  "Yoga",
-  "Natação",
+  "Musculação",
 ];
 
 export default function MarketplacePage() {
@@ -361,17 +360,19 @@ export default function MarketplacePage() {
               </Button>
             </Link>
             <Link href="/">
-              <div className="flex items-center gap-2">
-                <img src={logoUrl} alt="Bricks" className="h-7 w-auto" />
-                <img src={textLogoUrl} alt="Bricks" className="h-5 w-auto hidden sm:block invert" />
-              </div>
+              <span 
+                className="text-xl font-black tracking-tighter text-[#f7f7f7] hover:text-[#b6ff00] transition-colors" 
+                style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "-0.05em" }}
+              >
+                BRICKS
+              </span>
             </Link>
           </div>
           <div className="flex items-center gap-3">
             <Dialog open={supportOpen} onOpenChange={setSupportOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" data-testid="button-support">
-                  <Headphones className="w-4 h-4" />
+                <Button variant="ghost" size="sm" data-testid="button-support">
+                  Suporte
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px] bg-background border-[#b6ff00]/20">
