@@ -10,6 +10,11 @@ import {
   availabilitySlots,
   appointments,
   studentPlans,
+  reviews,
+  quoteRequests,
+  personalGallery,
+  personalServices,
+  personalExperience,
   type User,
   type InsertUser,
   type PersonalProfile,
@@ -28,7 +33,18 @@ import {
   type InsertAppointment,
   type StudentPlan,
   type InsertStudentPlan,
+  type Review,
+  type InsertReview,
+  type QuoteRequest,
+  type InsertQuoteRequest,
+  type PersonalGalleryItem,
+  type InsertPersonalGalleryItem,
+  type PersonalService,
+  type InsertPersonalService,
+  type PersonalExperienceItem,
+  type InsertPersonalExperienceItem,
   type PersonalWithUser,
+  type PersonalWithDetails,
   type StudentWithUser,
   type WorkoutWithExercises,
 } from "@shared/schema";
@@ -92,6 +108,35 @@ export interface IStorage {
   createStudentPlan(plan: InsertStudentPlan): Promise<StudentPlan>;
   getStudentPlansByStudentId(studentId: string): Promise<StudentPlan[]>;
   getStudentPlansByPersonalId(personalId: string): Promise<StudentPlan[]>;
+
+  // Reviews
+  createReview(review: InsertReview): Promise<Review>;
+  getReviewsByPersonalId(personalId: string): Promise<Review[]>;
+
+  // Quote Requests
+  createQuoteRequest(quote: InsertQuoteRequest): Promise<QuoteRequest>;
+  getQuoteRequestsByPersonalId(personalId: string): Promise<QuoteRequest[]>;
+  updateQuoteRequestStatus(id: string, status: "pending" | "viewed" | "responded" | "closed"): Promise<QuoteRequest | undefined>;
+
+  // Personal Gallery
+  createPersonalGalleryItem(item: InsertPersonalGalleryItem): Promise<PersonalGalleryItem>;
+  getPersonalGalleryByPersonalId(personalId: string): Promise<PersonalGalleryItem[]>;
+  deletePersonalGalleryItem(id: string): Promise<boolean>;
+
+  // Personal Services
+  createPersonalService(service: InsertPersonalService): Promise<PersonalService>;
+  getPersonalServicesByPersonalId(personalId: string): Promise<PersonalService[]>;
+  updatePersonalService(id: string, data: Partial<InsertPersonalService>): Promise<PersonalService | undefined>;
+  deletePersonalService(id: string): Promise<boolean>;
+
+  // Personal Experience
+  createPersonalExperience(experience: InsertPersonalExperienceItem): Promise<PersonalExperienceItem>;
+  getPersonalExperienceByPersonalId(personalId: string): Promise<PersonalExperienceItem[]>;
+  updatePersonalExperience(id: string, data: Partial<InsertPersonalExperienceItem>): Promise<PersonalExperienceItem | undefined>;
+  deletePersonalExperience(id: string): Promise<boolean>;
+
+  // Extended Personal Profile
+  getPersonalWithDetails(id: string): Promise<PersonalWithDetails | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -433,6 +478,126 @@ export class DatabaseStorage implements IStorage {
 
   async getStudentPlansByPersonalId(personalId: string): Promise<StudentPlan[]> {
     return db.select().from(studentPlans).where(eq(studentPlans.personalId, personalId));
+  }
+
+  // Reviews
+  async createReview(review: InsertReview): Promise<Review> {
+    const [newReview] = await db.insert(reviews).values(review).returning();
+    
+    // Update personal's average rating
+    const allReviews = await this.getReviewsByPersonalId(review.personalId);
+    const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+    await db.update(personalProfiles)
+      .set({ 
+        averageRating: avgRating.toFixed(2),
+        totalRatings: allReviews.length 
+      })
+      .where(eq(personalProfiles.id, review.personalId));
+    
+    return newReview;
+  }
+
+  async getReviewsByPersonalId(personalId: string): Promise<Review[]> {
+    return db.select().from(reviews)
+      .where(eq(reviews.personalId, personalId))
+      .orderBy(desc(reviews.createdAt));
+  }
+
+  // Quote Requests
+  async createQuoteRequest(quote: InsertQuoteRequest): Promise<QuoteRequest> {
+    const [newQuote] = await db.insert(quoteRequests).values(quote).returning();
+    return newQuote;
+  }
+
+  async getQuoteRequestsByPersonalId(personalId: string): Promise<QuoteRequest[]> {
+    return db.select().from(quoteRequests)
+      .where(eq(quoteRequests.personalId, personalId))
+      .orderBy(desc(quoteRequests.createdAt));
+  }
+
+  async updateQuoteRequestStatus(id: string, status: "pending" | "viewed" | "responded" | "closed"): Promise<QuoteRequest | undefined> {
+    const [updated] = await db.update(quoteRequests).set({ status }).where(eq(quoteRequests.id, id)).returning();
+    return updated;
+  }
+
+  // Personal Gallery
+  async createPersonalGalleryItem(item: InsertPersonalGalleryItem): Promise<PersonalGalleryItem> {
+    const [newItem] = await db.insert(personalGallery).values(item).returning();
+    return newItem;
+  }
+
+  async getPersonalGalleryByPersonalId(personalId: string): Promise<PersonalGalleryItem[]> {
+    return db.select().from(personalGallery)
+      .where(eq(personalGallery.personalId, personalId))
+      .orderBy(personalGallery.orderIndex);
+  }
+
+  async deletePersonalGalleryItem(id: string): Promise<boolean> {
+    const result = await db.delete(personalGallery).where(eq(personalGallery.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Personal Services
+  async createPersonalService(service: InsertPersonalService): Promise<PersonalService> {
+    const [newService] = await db.insert(personalServices).values(service).returning();
+    return newService;
+  }
+
+  async getPersonalServicesByPersonalId(personalId: string): Promise<PersonalService[]> {
+    return db.select().from(personalServices).where(eq(personalServices.personalId, personalId));
+  }
+
+  async updatePersonalService(id: string, data: Partial<InsertPersonalService>): Promise<PersonalService | undefined> {
+    const [updated] = await db.update(personalServices).set(data).where(eq(personalServices.id, id)).returning();
+    return updated;
+  }
+
+  async deletePersonalService(id: string): Promise<boolean> {
+    const result = await db.delete(personalServices).where(eq(personalServices.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Personal Experience
+  async createPersonalExperience(experience: InsertPersonalExperienceItem): Promise<PersonalExperienceItem> {
+    const [newExperience] = await db.insert(personalExperience).values(experience).returning();
+    return newExperience;
+  }
+
+  async getPersonalExperienceByPersonalId(personalId: string): Promise<PersonalExperienceItem[]> {
+    return db.select().from(personalExperience)
+      .where(eq(personalExperience.personalId, personalId))
+      .orderBy(desc(personalExperience.startYear));
+  }
+
+  async updatePersonalExperience(id: string, data: Partial<InsertPersonalExperienceItem>): Promise<PersonalExperienceItem | undefined> {
+    const [updated] = await db.update(personalExperience).set(data).where(eq(personalExperience.id, id)).returning();
+    return updated;
+  }
+
+  async deletePersonalExperience(id: string): Promise<boolean> {
+    const result = await db.delete(personalExperience).where(eq(personalExperience.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Extended Personal Profile with all details
+  async getPersonalWithDetails(id: string): Promise<PersonalWithDetails | undefined> {
+    const personal = await this.getPersonalById(id);
+    if (!personal) return undefined;
+
+    const [reviewsList, servicesList, experienceList, galleryList] = await Promise.all([
+      this.getReviewsByPersonalId(id),
+      this.getPersonalServicesByPersonalId(id),
+      this.getPersonalExperienceByPersonalId(id),
+      this.getPersonalGalleryByPersonalId(id),
+    ]);
+
+    return {
+      ...personal,
+      reviews: reviewsList,
+      services: servicesList,
+      experience: experienceList,
+      gallery: galleryList,
+    };
   }
 }
 

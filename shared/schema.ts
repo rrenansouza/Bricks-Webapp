@@ -29,6 +29,8 @@ export const personalProfiles = pgTable("personal_profiles", {
   specialties: text("specialties").array(),
   city: text("city"),
   neighborhood: text("neighborhood"),
+  cref: text("cref"),
+  regions: text("regions").array(),
   averagePrice: decimal("average_price", { precision: 10, scale: 2 }),
   averageRating: decimal("average_rating", { precision: 3, scale: 2 }).default("0"),
   totalRatings: integer("total_ratings").default(0),
@@ -112,6 +114,69 @@ export const studentPlans = pgTable("student_plans", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }),
+});
+
+// Contact preference enum
+export const contactPreferenceEnum = pgEnum("contact_preference", ["email", "whatsapp", "phone"]);
+
+// Quote status enum
+export const quoteStatusEnum = pgEnum("quote_status", ["pending", "viewed", "responded", "closed"]);
+
+// Reviews/Ratings for personal trainers
+export const reviews = pgTable("reviews", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  personalId: varchar("personal_id", { length: 36 }).notNull().references(() => personalProfiles.id, { onDelete: "cascade" }),
+  studentId: varchar("student_id", { length: 36 }).references(() => students.id, { onDelete: "set null" }),
+  studentName: text("student_name").notNull(),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Quote requests
+export const quoteRequests = pgTable("quote_requests", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  personalId: varchar("personal_id", { length: 36 }).notNull().references(() => personalProfiles.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  whatsapp: text("whatsapp").notNull(),
+  message: text("message").notNull(),
+  contactPreference: contactPreferenceEnum("contact_preference").notNull(),
+  status: quoteStatusEnum("status").default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Personal gallery media
+export const personalGallery = pgTable("personal_gallery", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  personalId: varchar("personal_id", { length: 36 }).notNull().references(() => personalProfiles.id, { onDelete: "cascade" }),
+  mediaUrl: text("media_url").notNull(),
+  mediaType: text("media_type").notNull(),
+  caption: text("caption"),
+  orderIndex: integer("order_index").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Personal services
+export const personalServices = pgTable("personal_services", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  personalId: varchar("personal_id", { length: 36 }).notNull().references(() => personalProfiles.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  duration: text("duration"),
+});
+
+// Personal experience
+export const personalExperience = pgTable("personal_experience", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  personalId: varchar("personal_id", { length: 36 }).notNull().references(() => personalProfiles.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  company: text("company"),
+  description: text("description"),
+  startYear: integer("start_year").notNull(),
+  endYear: integer("end_year"),
+  isCurrent: boolean("is_current").default(false),
 });
 
 // Relations
@@ -213,6 +278,45 @@ export const studentPlansRelations = relations(studentPlans, ({ one }) => ({
   }),
 }));
 
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  personal: one(personalProfiles, {
+    fields: [reviews.personalId],
+    references: [personalProfiles.id],
+  }),
+  student: one(students, {
+    fields: [reviews.studentId],
+    references: [students.id],
+  }),
+}));
+
+export const quoteRequestsRelations = relations(quoteRequests, ({ one }) => ({
+  personal: one(personalProfiles, {
+    fields: [quoteRequests.personalId],
+    references: [personalProfiles.id],
+  }),
+}));
+
+export const personalGalleryRelations = relations(personalGallery, ({ one }) => ({
+  personal: one(personalProfiles, {
+    fields: [personalGallery.personalId],
+    references: [personalProfiles.id],
+  }),
+}));
+
+export const personalServicesRelations = relations(personalServices, ({ one }) => ({
+  personal: one(personalProfiles, {
+    fields: [personalServices.personalId],
+    references: [personalProfiles.id],
+  }),
+}));
+
+export const personalExperienceRelations = relations(personalExperience, ({ one }) => ({
+  personal: one(personalProfiles, {
+    fields: [personalExperience.personalId],
+    references: [personalProfiles.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertPersonalProfileSchema = createInsertSchema(personalProfiles).omit({ id: true });
@@ -223,6 +327,11 @@ export const insertStudentWorkoutSchema = createInsertSchema(studentWorkouts).om
 export const insertAvailabilitySlotSchema = createInsertSchema(availabilitySlots).omit({ id: true });
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({ id: true, createdAt: true });
 export const insertStudentPlanSchema = createInsertSchema(studentPlans).omit({ id: true });
+export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, createdAt: true });
+export const insertQuoteRequestSchema = createInsertSchema(quoteRequests).omit({ id: true, createdAt: true, status: true });
+export const insertPersonalGallerySchema = createInsertSchema(personalGallery).omit({ id: true, createdAt: true });
+export const insertPersonalServiceSchema = createInsertSchema(personalServices).omit({ id: true });
+export const insertPersonalExperienceSchema = createInsertSchema(personalExperience).omit({ id: true });
 
 // Registration schema with validation
 export const registerSchema = z.object({
@@ -235,6 +344,16 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(1, "Senha é obrigatória"),
+});
+
+// Quote request form validation
+export const quoteFormSchema = z.object({
+  personalId: z.string(),
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  email: z.string().email("Email inválido"),
+  whatsapp: z.string().min(10, "WhatsApp inválido"),
+  message: z.string().min(10, "Mensagem deve ter pelo menos 10 caracteres"),
+  contactPreference: z.enum(["email", "whatsapp", "phone"]),
 });
 
 // Types
@@ -256,6 +375,16 @@ export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 export type StudentPlan = typeof studentPlans.$inferSelect;
 export type InsertStudentPlan = z.infer<typeof insertStudentPlanSchema>;
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type QuoteRequest = typeof quoteRequests.$inferSelect;
+export type InsertQuoteRequest = z.infer<typeof insertQuoteRequestSchema>;
+export type PersonalGalleryItem = typeof personalGallery.$inferSelect;
+export type InsertPersonalGalleryItem = z.infer<typeof insertPersonalGallerySchema>;
+export type PersonalService = typeof personalServices.$inferSelect;
+export type InsertPersonalService = z.infer<typeof insertPersonalServiceSchema>;
+export type PersonalExperienceItem = typeof personalExperience.$inferSelect;
+export type InsertPersonalExperienceItem = z.infer<typeof insertPersonalExperienceSchema>;
 
 // Extended types for API responses
 export type PersonalWithUser = PersonalProfile & { user: User; studentCount?: number };
@@ -263,3 +392,9 @@ export type StudentWithUser = Student & { user: User };
 export type WorkoutWithExercises = Workout & { exercises: WorkoutExercise[] };
 export type StudentWorkoutWithDetails = StudentWorkout & { workout: WorkoutWithExercises };
 export type AppointmentWithDetails = Appointment & { student: StudentWithUser; personal: PersonalWithUser };
+export type PersonalWithDetails = PersonalWithUser & {
+  reviews?: Review[];
+  services?: PersonalService[];
+  experience?: PersonalExperienceItem[];
+  gallery?: PersonalGalleryItem[];
+};

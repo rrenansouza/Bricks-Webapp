@@ -877,5 +877,118 @@ export async function registerRoutes(
     }
   });
 
+  // =====================
+  // QUOTE REQUESTS ROUTES
+  // =====================
+
+  // Create quote request (public)
+  app.post("/api/quotes", async (req: Request, res: Response) => {
+    try {
+      const { personalId, name, email, whatsapp, message, contactPreference } = req.body;
+      
+      if (!personalId || !name || !email || !whatsapp || !message || !contactPreference) {
+        return res.status(400).json({ message: "Todos os campos são obrigatórios" });
+      }
+
+      const quote = await storage.createQuoteRequest({
+        personalId,
+        name,
+        email,
+        whatsapp,
+        message,
+        contactPreference,
+      });
+
+      res.status(201).json(quote);
+    } catch (error) {
+      console.error("Create quote error:", error);
+      res.status(500).json({ message: "Erro ao enviar solicitação" });
+    }
+  });
+
+  // Get quote requests for personal
+  app.get("/api/quotes", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const quotes = await storage.getQuoteRequestsByPersonalId(profile.id);
+      res.json(quotes);
+    } catch (error) {
+      console.error("Get quotes error:", error);
+      res.status(500).json({ message: "Erro ao buscar solicitações" });
+    }
+  });
+
+  // =====================
+  // REVIEWS ROUTES
+  // =====================
+
+  // Get reviews for a personal
+  app.get("/api/personals/:id/reviews", async (req: Request, res: Response) => {
+    try {
+      const reviews = await storage.getReviewsByPersonalId(req.params.id);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Get reviews error:", error);
+      res.status(500).json({ message: "Erro ao buscar avaliações" });
+    }
+  });
+
+  // Create review
+  app.post("/api/personals/:id/reviews", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "student") {
+        return res.status(403).json({ message: "Apenas alunos podem avaliar" });
+      }
+
+      const student = await storage.getStudentByUserId(req.user!.id);
+      const user = await storage.getUserById(req.user!.id);
+
+      const { rating, comment } = req.body;
+      
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Avaliação deve ser entre 1 e 5" });
+      }
+
+      const review = await storage.createReview({
+        personalId: req.params.id,
+        studentId: student?.id || null,
+        studentName: user?.name || "Anônimo",
+        rating,
+        comment,
+      });
+
+      res.status(201).json(review);
+    } catch (error) {
+      console.error("Create review error:", error);
+      res.status(500).json({ message: "Erro ao criar avaliação" });
+    }
+  });
+
+  // =====================
+  // PERSONAL DETAILS ROUTE
+  // =====================
+
+  // Get personal with full details
+  app.get("/api/personals/:id/details", async (req: Request, res: Response) => {
+    try {
+      const personal = await storage.getPersonalWithDetails(req.params.id);
+      if (!personal) {
+        return res.status(404).json({ message: "Personal não encontrado" });
+      }
+      res.json(personal);
+    } catch (error) {
+      console.error("Get personal details error:", error);
+      res.status(500).json({ message: "Erro ao buscar detalhes do personal" });
+    }
+  });
+
   return httpServer;
 }
