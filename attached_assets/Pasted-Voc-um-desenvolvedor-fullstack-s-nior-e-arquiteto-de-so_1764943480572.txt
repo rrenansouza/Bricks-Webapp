@@ -1,0 +1,278 @@
+Você é um desenvolvedor fullstack sênior e arquiteto de software.
+Quero que você crie a estrutura completa (backend + frontend) de um MVP de um app chamado FitConnect (pode usar este nome como placeholder), voltado para personal trainers e alunos.
+
+1. STACK GERAL
+
+Backend: Node.js + Express, com ORM Prisma e banco PostgreSQL.
+
+Frontend web: Next.js + React, com TypeScript.
+
+O frontend deve ser totalmente responsivo, com layouts diferentes para mobile e desktop quando fizer sentido.
+
+2. REQUISITOS DE NEGÓCIO (MVP)
+
+O sistema deve contemplar:
+
+Tipos de usuário:
+
+personal (personal trainer)
+
+student (aluno)
+
+Funcionalidades principais do MVP:
+
+Autenticação e usuários
+
+Cadastro e login de usuários com campos básicos (nome, e-mail, senha, tipo de usuário).
+
+Senha com hash usando bcrypt.
+
+Autenticação via JWT.
+
+Middleware de autenticação para proteger rotas privadas.
+
+Perfil do personal + marketplace
+
+Tabela personal_profiles ligada ao usuário.
+
+Campos: bio, especialidades (string ou lista), cidade, bairro, preço_médio, foto_url.
+
+Endpoint público para listar perfis de personal (marketplace), com filtros por:
+
+cidade
+
+especialidade
+
+Na resposta do marketplace, incluir: nome do personal, especialidades, localização, número de alunos e nota média de feedback (pode usar um campo numérico simples para o MVP).
+
+Alunos e vínculo com personal
+
+Tabela students, associada a um user do tipo student.
+
+Tabela/relacionamento que vincula o aluno ao seu personal responsável.
+
+Um personal pode ter vários alunos.
+
+Treinos (criação/gerenciamento/envio)
+
+Tabela workouts:
+
+nome
+
+objetivo
+
+criado_por (personal_id)
+
+Tabela workout_exercises:
+
+ligada a workouts
+
+campos: nome_exercicio, video_url, series, repeticoes, carga, tempo_em_segundos, observacoes.
+
+Tabela student_workouts:
+
+vincula um workout a um student
+
+campos: data_inicio, data_fim, status (ativo, concluído etc.).
+
+O personal pode:
+
+criar, editar, excluir treinos
+
+atribuir treinos para um aluno específico
+
+O aluno pode:
+
+visualizar seus treinos
+
+marcar treinos como concluídos
+
+enviar um comentário/feedback simples sobre o treino.
+
+Agenda do personal e agendamento de aulas
+
+Tabela availability_slots:
+
+personal_id
+
+data_hora_inicio
+
+data_hora_fim
+
+Tabela appointments:
+
+student_id
+
+personal_id
+
+data_hora_inicio
+
+data_hora_fim
+
+status (pendente, confirmado, cancelado)
+
+Regras:
+
+Não permitir dois appointments com o mesmo personal no mesmo horário.
+
+O personal cadastra sua disponibilidade (slots).
+
+O aluno escolhe um horário livre para agendar.
+
+Gestão básica de alunos e pagamentos (MVP sem cobrança real ainda)
+
+Tabela student_plans:
+
+student_id
+
+personal_id
+
+tipo_plano (mensal, trimestral etc., string simples)
+
+status (ativo, inativo)
+
+data_inicio, data_fim
+
+Neste MVP, não implementar integração real com gateway de pagamento.
+
+Apenas deixar a estrutura pronta para marcar aluno como adimplente/inadimplente.
+
+3. BACKEND – DETALHES TÉCNICOS
+
+Estrutura de pastas sugerida no backend:
+
+backend/src/
+
+controllers/
+
+services/
+
+routes/
+
+middlewares/
+
+prisma/ (schema)
+
+utils/ (funções de apoio, ex: geração de JWT)
+
+Requisitos:
+
+Criar o schema Prisma completo (schema.prisma) com todas as tabelas mencionadas.
+
+Criar rotas REST bem definidas com prefixos:
+
+/auth (login, registro)
+
+/personals (crud de perfil + marketplace)
+
+/students (gestão de aluno + vínculo)
+
+/workouts (treinos e exercícios)
+
+/appointments (agenda e agendamentos)
+
+Usar variáveis de ambiente (.env) para:
+
+URL do banco Postgres
+
+JWT_SECRET
+
+Nunca salvar dados de cartão de crédito ou informações sensíveis de pagamento.
+
+Adicionar comentários explicando as principais regras de negócio.
+
+Criar um README.md dentro de backend/ explicando como rodar o back.
+
+4. FRONTEND – NEXT.JS + REACT (WEB RESPONSIVO)
+
+Criar um app Next.js em frontend/ com as seguintes páginas principais:
+
+/login e /register
+
+Tela simples de autenticação (login) e registro.
+
+Campo para escolher tipo de usuário: personal ou aluno.
+
+Dashboard do personal (/dashboard/personal)
+
+Resumo dos alunos, treinos ativos e próximos agendamentos.
+
+Acesso rápido para:
+
+Gerenciar treinos (CRUD)
+
+Gerenciar alunos
+
+Ver agenda / próximos agendamentos
+
+Dashboard do aluno (/dashboard/student)
+
+Ver treinos atribuídos, com status (ativo, concluído).
+
+Ver detalhes do treino (lista de exercícios, vídeos, tempos, cargas).
+
+Botão para marcar treino como concluído e enviar feedback.
+
+Tela para visualizar agenda do personal e agendar aula.
+
+Marketplace de personais (/personals)
+
+Lista de personais com: foto, nome, especialidades, localização, número de alunos.
+
+Filtro por cidade e especialidade.
+
+Card clicável com mais detalhes de cada personal.
+
+Páginas auxiliares:
+
+/ (landing simples explicando o app)
+
+/profile (edição de perfil do usuário logado, dependendo se é personal ou aluno)
+
+Responsividade e design (ponto importante):
+
+O site deve ser mobile-first, mas adaptado tanto para celular quanto desktop.
+
+No mobile:
+
+Menu tipo hambúrguer no topo.
+
+Navegação principal pode ser um bottom bar (ícones para: Home, Treinos, Agenda, Perfil).
+
+Componentes ocupando largura quase total, botões grandes e fáceis de clicar.
+
+No desktop:
+
+Layout com mais espaço, usando colunas quando fizer sentido (por exemplo, lista de alunos à esquerda e detalhes à direita).
+
+Menu lateral ou top bar fixo.
+
+Use breakpoints responsivos (via CSS Modules, Styled Components ou Tailwind – você pode escolher) para mudar o layout entre mobile e desktop.
+
+Manter um estilo clean e moderno, com boa hierarquia visual:
+
+Títulos claros, textos legíveis, espaço em branco, botões com bom contraste.
+
+Integração Front + Back:
+
+O frontend deve consumir a API do backend via fetch/axios.
+
+Criar um pequeno serviço de API no frontend (/services/api.ts) para centralizar as chamadas ao backend.
+
+Implementar controle de sessão (armazenar token JWT com segurança, ex: em cookies httpOnly ou localStorage com cuidado).
+
+5. BOAS PRÁTICAS E MANUTENÇÃO
+
+Escreva o código de forma limpa, clara, usando TypeScript no frontend e tipagem decente no backend (se quiser, use TypeScript também no back).
+
+Comente trechos importantes de regra de negócio.
+
+Nomeie variáveis, funções e arquivos de forma intuitiva.
+
+Certifique-se de que qualquer desenvolvedor que abrir o projeto consiga entender rapidamente a estrutura.
+
+No final, explique brevemente (em texto) como eu posso futuramente:
+
+adaptar esse backend para ser consumido também por um app mobile em React Native / Expo;
+
+e usar o mesmo backend quando eu for publicar o app na App Store e Google Play.

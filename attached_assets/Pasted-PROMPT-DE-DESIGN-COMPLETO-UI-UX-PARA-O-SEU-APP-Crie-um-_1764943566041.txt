@@ -1,0 +1,154 @@
+PROMPT DE DESIGN COMPLETO (UI/UX) PARA O SEU APP
+
+Crie um design de interface (UI/UX) completo, minimalista, moderno, intimista e altamente estiloso para um aplicativo chamado FitConnect, focado em personal trainers e alunos.
+
+🎨 Paleta de Cores Oficial
+
+Cor Principal (fundo, áreas profundas, blocos): #002c2b — verde petróleo escuro, sofisticado, refinado, intimista.
+
+Cor Secundária (botões, títulos, elementos de destaque): #b6ff00 — verde neon vibrante, moderno e esportivo.
+
+Cor Terciária (subtítulos, textos suaves, bordas sutis): #f7f7f7 — branco gelo, limpo, minimalista.
+
+Utilize contrastes fortes entre #002c2b e #b6ff00, com bastante espaço em branco negativo para reforçar o visual premium.
+
+🧭 Direção de Estilo
+
+Estilo minimalista, elegante, escuro (dark minimal) com toques neon.
+
+Atmosfera intimista, sofisticada e esportiva ao mesmo tempo.
+
+Ícones simples, outline, monocromáticos.
+
+Tipografias modernas e de alta legibilidade. Sugestões:
+
+Inter, Poppins, Montserrat, ou Sora
+
+Títulos pesados (weight 600–700), textos leves (300–400).
+
+Uso moderado de animações suaves (fade, slide-up, microinterações nos botões).
+
+📱 Web + Mobile (Layouts Diferentes)
+
+Gere layouts adaptados para desktop e mobile com diferenças funcionais:
+
+No Mobile:
+
+Navegação por bottom bar com ícones minimalistas.
+
+Layout tipo “app nativo”, blocos grandes, toques acessíveis, botões full-width.
+
+Telas mais focadas, com menos conteúdo por passo.
+
+No Desktop:
+
+Sidebar fixa à esquerda com navegação vertical.
+
+Layouts em duas ou três colunas onde fizer sentido (lista + detalhes).
+
+Conteúdo mais amplo, aproveitando o espaço horizontal.
+
+🧩 Telas que o design deve contemplar
+1. Landing Page / Home Pública
+
+Hero minimalista com título grande em #b6ff00
+
+Fundo profundo em #002c2b
+
+Call-to-action forte: botão neon destacado
+
+Seções explicando: Personal → Aluno → Marketplace
+
+2. Login / Registro
+
+Tela escura minimalista
+
+Inputs com bordas sutis #f7f7f7
+
+Botão principal neon #b6ff00
+
+3. Dashboard do Personal
+
+Destaques:
+
+Total de alunos
+
+Agendamentos próximos
+
+Treinos ativos
+
+Cards com fundo #002c2b e textos #f7f7f7
+
+Botões de ação em #b6ff00 com microanimações
+
+4. Dashboard do Aluno
+
+Lista de treinos ativos
+
+Detalhes do treino (vídeos, séries, carga, timer)
+
+Botões para marcar treino concluído
+
+Progresso visual minimalista
+
+5. Marketplace de Personais
+
+Cards elegantes com:
+
+foto do personal
+
+estrelas (avaliação)
+
+localização
+
+especialidades
+
+número de alunos
+
+Filtros modernos em #b6ff00
+
+6. Agenda / Agendamento de Aulas
+
+Calendário estilizado em #002c2b
+
+Slots de horários visualmente claros
+
+Diferenciação entre “disponível”, “reservado”, “concluído”
+
+7. Tela de Treinos
+
+Cards grandes com exercícios
+
+Vídeo em miniatura
+
+Dados técnicos: séries, reps, carga, tempo
+
+Botão “Marcar como concluído” destacado
+
+⚡ Microinterações e Animações
+
+Hover suave em botões (leve aumento de brilho do neon).
+
+Fade-in ao carregar cards.
+
+Motion minimalista ao trocar de abas.
+
+🔒 Diretrizes de UX
+
+Navegação direta, simples, sem ruído visual.
+
+Conversão fácil (tudo em no máximo 2 cliques).
+
+Usabilidade adaptada para quem usa o app na academia, correndo, cansado — componentes grandes e claros.
+
+📦 Entrega esperada
+
+Layout completo em alta fidelidade para mobile e desktop.
+
+Componentes reutilizáveis: cards, botões, inputs, banners, modals, iconografia.
+
+Sistema de design baseado nessa paleta exclusiva.
+
+Sugestão de tipografia, espaçamentos, grid e hierarquia visual.
+
+Renderize tudo com estética extremamente moderna, com forte contraste entre o verde-petróleo escuro e o neon esportivo, entregando identidade única, estilosa e memorável.
