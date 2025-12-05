@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useDeferredValue } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -13,6 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useAuth } from "@/lib/auth";
 import {
@@ -24,24 +34,34 @@ import {
   ChevronRight,
   Award,
   Clock,
+  Headphones,
+  MessageCircle,
 } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
 import logoUrl from "@assets/Brickslogo_1764955332419.png";
+import textLogoUrl from "@assets/text_logo_1764957861567.png";
+
+const WHATSAPP_NUMBER = "5511945296363";
 
 interface PersonalProfile {
   id: string;
+  userId: string;
   bio: string | null;
-  specialty: string | null;
-  location: string | null;
-  hourlyRate: number | null;
-  experience: number | null;
+  specialties: string[] | null;
+  city: string | null;
+  neighborhood: string | null;
+  cref: string | null;
+  regions: string[] | null;
+  averagePrice: string | null;
   averageRating: string | null;
   totalRatings: number | null;
-  isVerified: boolean | null;
-  workModality: string | null;
   user: {
     id: string;
     name: string;
+    email: string;
     photoUrl: string | null;
+    userType: string;
+    createdAt: string;
   };
   studentCount?: number;
 }
@@ -61,48 +81,72 @@ export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportForm, setSupportForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const { data: personals, isLoading } = useQuery<PersonalProfile[]>({
     queryKey: ["/api/personals"],
   });
 
   const filteredPersonals = personals?.filter((personal) => {
+    const specialtiesText = personal.specialties?.join(" ").toLowerCase() || "";
+    const locationText = personal.city ? `${personal.city}${personal.neighborhood ? `, ${personal.neighborhood}` : ""}` : "";
+    
     const matchesSearch =
-      !searchQuery ||
-      personal.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      personal.specialty?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      personal.location?.toLowerCase().includes(searchQuery.toLowerCase());
+      !deferredSearchQuery ||
+      personal.user.name.toLowerCase().includes(deferredSearchQuery.toLowerCase()) ||
+      specialtiesText.includes(deferredSearchQuery.toLowerCase()) ||
+      locationText.toLowerCase().includes(deferredSearchQuery.toLowerCase());
     
     const matchesLocation =
       !selectedLocation ||
       selectedLocation === "all" ||
-      personal.location?.toLowerCase().includes(selectedLocation.toLowerCase());
+      personal.city?.toLowerCase().includes(selectedLocation.toLowerCase());
     
     const matchesSpecialty =
       !selectedSpecialty ||
       selectedSpecialty === "all" ||
-      personal.specialty?.toLowerCase() === selectedSpecialty.toLowerCase();
+      personal.specialties?.some(s => s.toLowerCase() === selectedSpecialty.toLowerCase());
     
     return matchesSearch && matchesLocation && matchesSpecialty;
   });
 
-  const locations = [...new Set(personals?.map((p) => p.location).filter(Boolean) || [])];
+  const locations = Array.from(new Set(personals?.map((p) => p.city).filter(Boolean) || []));
+
+  const handleSupportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const whatsappMessage = encodeURIComponent(
+      `*Contato via Site*\n\nNome: ${supportForm.name}\nEmail: ${supportForm.email}\nAssunto: ${supportForm.subject}\n\nMensagem:\n${supportForm.message}`
+    );
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`, "_blank");
+    setSupportOpen(false);
+    setSupportForm({ name: "", email: "", subject: "", message: "" });
+  };
+
+  const openWhatsApp = () => {
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Gostaria de saber mais sobre o Bricks.")}`, "_blank");
+  };
 
   const handleViewPersonal = (personalId: string) => {
     setLocation(`/personals/${personalId}`);
   };
 
-  const getModalityLabel = (modality: string | null) => {
-    switch (modality) {
-      case "online":
-        return "Online";
-      case "presencial":
-        return "Presencial";
-      case "both":
-        return "Presencial/Online";
-      default:
-        return null;
+  const getLocationText = (personal: PersonalProfile) => {
+    if (personal.city && personal.neighborhood) {
+      return `${personal.city}, ${personal.neighborhood}`;
     }
+    return personal.city || personal.neighborhood || null;
+  };
+
+  const getPrimarySpecialty = (personal: PersonalProfile) => {
+    return personal.specialties?.[0] || null;
   };
 
   const MainContent = () => (
@@ -207,7 +251,7 @@ export default function MarketplacePage() {
                         </span>
                       )}
                     </div>
-                    {personal.isVerified && (
+                    {personal.cref && (
                       <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#b6ff00] rounded-full flex items-center justify-center">
                         <Award className="w-3 h-3 text-[#002c2b]" />
                       </div>
@@ -227,29 +271,29 @@ export default function MarketplacePage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {personal.specialty && (
+                  {getPrimarySpecialty(personal) && (
                     <Badge className="bg-[#b6ff00]/10 text-[#b6ff00] border-[#b6ff00]/20">
-                      {personal.specialty}
+                      {getPrimarySpecialty(personal)}
                     </Badge>
                   )}
-                  {personal.workModality && (
+                  {personal.cref && (
                     <Badge variant="outline" className="text-[#f7f7f7]/60 border-[#f7f7f7]/20">
-                      {getModalityLabel(personal.workModality)}
+                      CREF
                     </Badge>
                   )}
                 </div>
 
-                {personal.location && (
+                {getLocationText(personal) && (
                   <div className="flex items-center gap-2 text-sm text-[#f7f7f7]/60 mb-3">
                     <MapPin className="w-4 h-4 text-[#b6ff00]/50" />
-                    <span>{personal.location}</span>
+                    <span>{getLocationText(personal)}</span>
                   </div>
                 )}
 
-                {personal.experience && (
+                {personal.studentCount && personal.studentCount > 0 && (
                   <div className="flex items-center gap-2 text-sm text-[#f7f7f7]/60 mb-3">
                     <Clock className="w-4 h-4 text-[#b6ff00]/50" />
-                    <span>{personal.experience} anos de experiência</span>
+                    <span>{personal.studentCount} alunos ativos</span>
                   </div>
                 )}
 
@@ -260,9 +304,9 @@ export default function MarketplacePage() {
                 )}
 
                 <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#b6ff00]/10">
-                  {personal.hourlyRate && (
+                  {personal.averagePrice && (
                     <span className="text-lg font-semibold text-[#b6ff00]">
-                      R$ {personal.hourlyRate}/hora
+                      R$ {parseFloat(personal.averagePrice).toFixed(0)}/hora
                     </span>
                   )}
                   <Button size="sm" variant="ghost" className="ml-auto text-[#f7f7f7]/70 hover:text-[#b6ff00]">
@@ -317,10 +361,95 @@ export default function MarketplacePage() {
               </Button>
             </Link>
             <Link href="/">
-              <img src={logoUrl} alt="Bricks" className="h-7 w-auto" />
+              <div className="flex items-center gap-2">
+                <img src={logoUrl} alt="Bricks" className="h-7 w-auto" />
+                <img src={textLogoUrl} alt="Bricks" className="h-5 w-auto hidden sm:block invert" />
+              </div>
             </Link>
           </div>
           <div className="flex items-center gap-3">
+            <Dialog open={supportOpen} onOpenChange={setSupportOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" data-testid="button-support">
+                  <Headphones className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] bg-background border-[#b6ff00]/20">
+                <DialogHeader>
+                  <DialogTitle className="text-[#f7f7f7]">Fale com o Suporte</DialogTitle>
+                  <DialogDescription className="text-[#f7f7f7]/60">
+                    Preencha o formulário abaixo e entraremos em contato.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSupportSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="support-name-mp" className="text-[#f7f7f7]">Nome</Label>
+                    <Input
+                      id="support-name-mp"
+                      value={supportForm.name}
+                      onChange={(e) => setSupportForm({ ...supportForm, name: e.target.value })}
+                      placeholder="Seu nome completo"
+                      required
+                      className="bg-[#002c2b]/50 border-[#b6ff00]/20 text-[#f7f7f7]"
+                      data-testid="input-support-name-mp"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="support-email-mp" className="text-[#f7f7f7]">Email</Label>
+                    <Input
+                      id="support-email-mp"
+                      type="email"
+                      value={supportForm.email}
+                      onChange={(e) => setSupportForm({ ...supportForm, email: e.target.value })}
+                      placeholder="seu@email.com"
+                      required
+                      className="bg-[#002c2b]/50 border-[#b6ff00]/20 text-[#f7f7f7]"
+                      data-testid="input-support-email-mp"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="support-subject-mp" className="text-[#f7f7f7]">Assunto</Label>
+                    <Input
+                      id="support-subject-mp"
+                      value={supportForm.subject}
+                      onChange={(e) => setSupportForm({ ...supportForm, subject: e.target.value })}
+                      placeholder="Ex: Dúvida sobre cadastro"
+                      required
+                      className="bg-[#002c2b]/50 border-[#b6ff00]/20 text-[#f7f7f7]"
+                      data-testid="input-support-subject-mp"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="support-message-mp" className="text-[#f7f7f7]">Mensagem</Label>
+                    <Textarea
+                      id="support-message-mp"
+                      value={supportForm.message}
+                      onChange={(e) => setSupportForm({ ...supportForm, message: e.target.value })}
+                      placeholder="Descreva sua dúvida ou problema..."
+                      required
+                      rows={4}
+                      className="bg-[#002c2b]/50 border-[#b6ff00]/20 text-[#f7f7f7] resize-none"
+                      data-testid="input-support-message-mp"
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <Button type="submit" className="flex-1 neon-glow-hover" data-testid="button-submit-support-mp">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Enviar via WhatsApp
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={openWhatsApp}
+              className="text-[#25D366] hover:text-[#25D366]/80"
+              data-testid="button-whatsapp-mp"
+            >
+              <SiWhatsapp className="w-4 h-4" />
+            </Button>
             <Link href="/login">
               <Button variant="ghost" size="sm" className="text-[#f7f7f7]" data-testid="link-login">
                 Entrar

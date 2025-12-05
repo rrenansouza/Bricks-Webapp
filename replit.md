@@ -90,6 +90,16 @@ Preferred communication style: Simple, everyday language.
 - Replit-specific plugins for development banner, error overlay, and code cartography
 - Hot module replacement (HMR) via Vite WebSocket connection
 
+## Recent Changes
+
+### December 5, 2025
+- Added text logo alongside main icon logo in headers (landing page, marketplace, footer)
+- Implemented support dialog with contact form (name, email, subject, message)
+- Added WhatsApp integration (number: 5511945296363) - direct button and form submission
+- Fixed search input interruption using React 18's useDeferredValue for debounced filtering
+- Fixed PersonalProfile interface to match database schema (specialties array, city, averagePrice)
+- Images use CSS invert filter for proper display on dark background
+
 **Security**:
 - bcryptjs for password hashing
 - jsonwebtoken for JWT creation and verification

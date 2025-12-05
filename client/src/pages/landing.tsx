@@ -1,19 +1,67 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Dumbbell, Users, Calendar, Star, ChevronRight, MapPin, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ArrowRight, Dumbbell, Users, Calendar, Star, ChevronRight, MapPin, Search, Headphones, MessageCircle } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
 import heroVideo from "@assets/herovideo_1764955332418.mp4";
 import trainingVideo from "@assets/trainingvideo_1764955332419.mp4";
 import logoUrl from "@assets/Brickslogo_1764955332419.png";
+import textLogoUrl from "@assets/text_logo_1764957861567.png";
+
+const WHATSAPP_NUMBER = "5511945296363";
 
 export default function LandingPage() {
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportForm, setSupportForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+
+  const handleSupportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const whatsappMessage = encodeURIComponent(
+      `*Contato via Site*\n\nNome: ${supportForm.name}\nEmail: ${supportForm.email}\nAssunto: ${supportForm.subject}\n\nMensagem:\n${supportForm.message}`
+    );
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`, "_blank");
+    setSupportOpen(false);
+    setSupportForm({ name: "", email: "", subject: "", message: "" });
+  };
+
+  const openWhatsApp = () => {
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Gostaria de saber mais sobre o Bricks.")}`, "_blank");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-background/60 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <Link href="/">
             <div className="flex items-center gap-2" data-testid="link-home">
-              <img src={logoUrl} alt="Bricks" className="h-8 w-auto" />
+              <img 
+                src={logoUrl} 
+                alt="Bricks" 
+                className="h-8 w-auto"
+                style={{ filter: "drop-shadow(0 0 0 transparent)" }}
+              />
+              <img 
+                src={textLogoUrl} 
+                alt="Bricks" 
+                className="h-6 w-auto hidden sm:block invert"
+              />
             </div>
           </Link>
           <div className="flex items-center gap-3">
@@ -22,6 +70,88 @@ export default function LandingPage() {
                 Encontrar Personal
               </Button>
             </Link>
+            <Dialog open={supportOpen} onOpenChange={setSupportOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" data-testid="button-support">
+                  <Headphones className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] bg-background border-[#b6ff00]/20">
+                <DialogHeader>
+                  <DialogTitle className="text-[#f7f7f7]">Fale com o Suporte</DialogTitle>
+                  <DialogDescription className="text-[#f7f7f7]/60">
+                    Preencha o formulário abaixo e entraremos em contato.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSupportSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="support-name" className="text-[#f7f7f7]">Nome</Label>
+                    <Input
+                      id="support-name"
+                      value={supportForm.name}
+                      onChange={(e) => setSupportForm({ ...supportForm, name: e.target.value })}
+                      placeholder="Seu nome completo"
+                      required
+                      className="bg-[#002c2b]/50 border-[#b6ff00]/20 text-[#f7f7f7]"
+                      data-testid="input-support-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="support-email" className="text-[#f7f7f7]">Email</Label>
+                    <Input
+                      id="support-email"
+                      type="email"
+                      value={supportForm.email}
+                      onChange={(e) => setSupportForm({ ...supportForm, email: e.target.value })}
+                      placeholder="seu@email.com"
+                      required
+                      className="bg-[#002c2b]/50 border-[#b6ff00]/20 text-[#f7f7f7]"
+                      data-testid="input-support-email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="support-subject" className="text-[#f7f7f7]">Assunto</Label>
+                    <Input
+                      id="support-subject"
+                      value={supportForm.subject}
+                      onChange={(e) => setSupportForm({ ...supportForm, subject: e.target.value })}
+                      placeholder="Ex: Dúvida sobre cadastro"
+                      required
+                      className="bg-[#002c2b]/50 border-[#b6ff00]/20 text-[#f7f7f7]"
+                      data-testid="input-support-subject"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="support-message" className="text-[#f7f7f7]">Mensagem</Label>
+                    <Textarea
+                      id="support-message"
+                      value={supportForm.message}
+                      onChange={(e) => setSupportForm({ ...supportForm, message: e.target.value })}
+                      placeholder="Descreva sua dúvida ou problema..."
+                      required
+                      rows={4}
+                      className="bg-[#002c2b]/50 border-[#b6ff00]/20 text-[#f7f7f7] resize-none"
+                      data-testid="input-support-message"
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <Button type="submit" className="flex-1 neon-glow-hover" data-testid="button-submit-support">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Enviar via WhatsApp
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={openWhatsApp}
+              className="text-[#25D366] hover:text-[#25D366]/80"
+              data-testid="button-whatsapp"
+            >
+              <SiWhatsapp className="w-4 h-4" />
+            </Button>
             <Link href="/login">
               <Button variant="ghost" size="sm" data-testid="link-login">
                 Entrar
@@ -324,6 +454,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
               <img src={logoUrl} alt="Bricks" className="h-6 w-auto" />
+              <img src={textLogoUrl} alt="Bricks" className="h-5 w-auto hidden sm:block invert" />
             </div>
             <div className="flex items-center gap-6 text-sm text-[#f7f7f7]/50">
               <Link href="/personals">
@@ -335,6 +466,13 @@ export default function LandingPage() {
               <Link href="/register">
                 <span className="hover:text-[#b6ff00] transition-colors cursor-pointer">Cadastrar</span>
               </Link>
+              <button 
+                onClick={openWhatsApp}
+                className="hover:text-[#25D366] transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <SiWhatsapp className="w-4 h-4" />
+                WhatsApp
+              </button>
             </div>
             <p className="text-sm text-[#f7f7f7]/40">
               © 2024 Bricks. Todos os direitos reservados.
