@@ -6,7 +6,7 @@ import { z } from "zod";
 // Enums
 export const userTypeEnum = pgEnum("user_type", ["personal", "student"]);
 export const appointmentStatusEnum = pgEnum("appointment_status", ["pending", "confirmed", "cancelled", "completed"]);
-export const workoutStatusEnum = pgEnum("workout_status", ["active", "completed", "paused"]);
+export const workoutStatusEnum = pgEnum("workout_status", ["active", "completed", "paused", "scheduled"]);
 export const planTypeEnum = pgEnum("plan_type", ["monthly", "quarterly", "semiannual", "annual"]);
 export const planStatusEnum = pgEnum("plan_status", ["active", "inactive", "expired"]);
 export const studentStatusEnum = pgEnum("student_status", ["training", "single_consultation"]);
@@ -16,6 +16,12 @@ export const maritalStatusEnum = pgEnum("marital_status", ["single", "married", 
 export const referralSourceEnum = pgEnum("referral_source", ["friend", "professional", "social_media", "flyer", "google", "events", "other"]);
 export const eventTypeEnum = pgEnum("event_type", ["appointment", "personal_event"]);
 export const registrationStatusEnum = pgEnum("registration_status", ["pending", "approved", "rejected"]);
+export const workoutLevelEnum = pgEnum("workout_level", ["beginner", "intermediate", "advanced"]);
+export const workoutObjectiveEnum = pgEnum("workout_objective", ["weight_loss", "hypertrophy", "conditioning", "rehabilitation", "strength", "flexibility"]);
+export const notificationTypeEnum = pgEnum("notification_type", ["immediate", "scheduled", "recurring"]);
+export const notificationStatusEnum = pgEnum("notification_status", ["pending", "sent", "failed", "cancelled"]);
+export const notificationChannelEnum = pgEnum("notification_channel", ["in_app", "email", "whatsapp"]);
+export const recurringFrequencyEnum = pgEnum("recurring_frequency", ["daily", "weekly", "monthly"]);
 
 // Users table - base authentication
 export const users = pgTable("users", {
@@ -25,6 +31,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   userType: userTypeEnum("user_type").notNull(),
   photoUrl: text("photo_url"),
+  mustChangePasswordOnFirstLogin: boolean("must_change_password_on_first_login").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -100,21 +107,32 @@ export const financialRecords = pgTable("financial_records", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Workouts created by personals
+// Workouts created by personals - ENHANCED
 export const workouts = pgTable("workouts", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   objective: text("objective"),
+  level: text("level"),
   description: text("description"),
+  frequency: text("frequency"),
+  duration: integer("duration"),
+  tags: text("tags").array(),
+  isPreset: boolean("is_preset").default(false),
+  isTrending: boolean("is_trending").default(false),
+  usageCount: integer("usage_count").default(0),
+  studentCount: integer("student_count").default(0),
+  rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
   personalId: varchar("personal_id", { length: 36 }).notNull().references(() => personalProfiles.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Exercises within workouts
+// Exercises within workouts - ENHANCED
 export const workoutExercises = pgTable("workout_exercises", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   workoutId: varchar("workout_id", { length: 36 }).notNull().references(() => workouts.id, { onDelete: "cascade" }),
   exerciseName: text("exercise_name").notNull(),
+  muscleGroup: text("muscle_group"),
+  equipment: text("equipment"),
   videoUrl: text("video_url"),
   sets: integer("sets"),
   reps: integer("reps"),
@@ -415,7 +433,7 @@ export const insertFinancialRecordSchema = createInsertSchema(financialRecords).
 // Student creation form validation
 export const createStudentFormSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  email: z.string().email("Email inválido"),
+  email: z.string().email("Email invalido"),
   phone: z.string().optional(),
   age: z.number().min(1).max(120).optional(),
   cpf: z.string().optional(),
@@ -441,22 +459,22 @@ export const createStudentFormSchema = z.object({
 // Registration schema with validation
 export const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  email: z.string().email("Email inválido"),
+  email: z.string().email("Email invalido"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   userType: z.enum(["personal", "student"]),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(1, "Senha é obrigatória"),
+  email: z.string().email("Email invalido"),
+  password: z.string().min(1, "Senha e obrigatoria"),
 });
 
 // Quote request form validation
 export const quoteFormSchema = z.object({
   personalId: z.string(),
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  email: z.string().email("Email inválido"),
-  whatsapp: z.string().min(10, "WhatsApp inválido"),
+  email: z.string().email("Email invalido"),
+  whatsapp: z.string().min(10, "WhatsApp invalido"),
   message: z.string().min(10, "Mensagem deve ter pelo menos 10 caracteres"),
   contactPreference: z.enum(["email", "whatsapp", "phone"]),
 });
@@ -508,3 +526,80 @@ export type PersonalWithDetails = PersonalWithUser & {
   experience?: PersonalExperienceItem[];
   gallery?: PersonalGalleryItem[];
 };
+
+// Notification types (for mock services)
+export interface BricksNotification {
+  id: string;
+  type: 'immediate' | 'scheduled' | 'recurring';
+  title: string;
+  message: string;
+  recipientType: 'student' | 'group';
+  recipientId?: string;
+  recipientGroup?: string;
+  channel: 'in_app' | 'email' | 'whatsapp';
+  status: 'pending' | 'sent' | 'failed' | 'cancelled';
+  scheduledAt?: Date;
+  recurringDays?: number[];
+  recurringTime?: string;
+  recurringFrequency?: 'daily' | 'weekly' | 'monthly';
+  createdAt: Date;
+  sentAt?: Date;
+}
+
+// Event types (for mock services)
+export interface BricksEvent {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  date: Date;
+  city: string;
+  location: string;
+  distance?: string;
+  eventType: string;
+  categories: string[];
+  normalPrice: number;
+  bricksPrice: number;
+  hasBricksDiscount: boolean;
+  benefits?: string[];
+}
+
+// Product types (for mock services)
+export interface BricksProduct {
+  id: string;
+  name: string;
+  brand: string;
+  description: string;
+  imageUrl: string;
+  images: string[];
+  category: string;
+  normalPrice: number;
+  bricksPrice?: number;
+  hasBricksDiscount: boolean;
+  sizes?: string[];
+  tags: string[];
+  inStock: boolean;
+}
+
+// AI Workout suggestion types
+export interface AIWorkoutSuggestion {
+  workout: {
+    name: string;
+    objective: string;
+    level: string;
+    frequency: string;
+    duration: number;
+    exercises: Array<{
+      exerciseName: string;
+      muscleGroup: string;
+      equipment: string;
+      sets: number;
+      reps?: number;
+      timeInSeconds?: number;
+      restTimeSeconds: number;
+      observations?: string;
+    }>;
+  };
+  mealPlan?: string;
+  supplements?: string;
+}

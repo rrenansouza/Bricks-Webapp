@@ -1,0 +1,692 @@
+Você é um desenvolvedor fullstack sênior.
+Quero que você implemente, no meu app Bricks (para personal trainers e alunos), os seguintes módulos, todos seguindo o design dark premium:
+
+Principal (fundo): #002c2b
+
+Secundária (botões, destaques): #b6ff00
+
+Terciária (textos e neutros): #f7f7f7
+
+Use Next.js + React + TailwindCSS no frontend.
+Se faltar backend, use mocks, mas sempre isole as chamadas em serviços para fácil integração futura.
+
+🧩 0. PADRÃO GERAL DE DESIGN
+
+Layout dark premium, minimalista e moderno.
+
+Cards com cantos arredondados e sombras suaves.
+
+Tipografia moderna (Inter, Poppins ou similar).
+
+No desktop, usar grids/colunas; no mobile, blocos empilhados.
+
+Microinterações: hover suave, feedback visual de sucesso/erro (toasts/banners).
+
+🧱 1. MÓDULO “TREINOS” (MENU PRINCIPAL – PERSONAL)
+
+Adicionar ao dashboard do personal um item de menu chamado “Treinos”, que abre uma página com 3 sections principais:
+
+Meus treinos
+
+Criar treino com IA
+
+Treinos em alta (Bricks)
+
+No desktop, organizar em colunas; no mobile, blocos empilhados.
+
+1.1 MEUS TREINOS – Criação manual + banco de presets
+
+Na section “Meus treinos”, implementar:
+
+Lista de treinos do personal (cards), com:
+
+Nome do treino
+
+Objetivo (emagrecimento, hipertrofia, condicionamento, reabilitação etc.)
+
+Nível (iniciante, intermediário, avançado)
+
+Duração estimada
+
+Número de exercícios
+
+Tags (Full body, ABC, HIIT, Resistência etc.)
+
+Botões: Ver / Editar / Duplicar / Atribuir a aluno
+
+Filtros e busca:
+
+Filtros por objetivo, nível e grupo muscular principal.
+
+Campo de busca por nome do treino.
+
+Botão: “+ Criar treino manualmente”
+→ abre tela/modal de criação/edição de treino com:
+
+Dados do treino:
+
+Nome do treino
+
+Objetivo (dropdown)
+
+Nível (iniciante / intermediário / avançado)
+
+Frequência sugerida (ex.: 3x por semana)
+
+Observações gerais
+
+Lista de exercícios (dinâmica):
+
+Para cada exercício:
+
+Nome do exercício (autocomplete/sugestão)
+
+Grupo muscular principal
+
+Equipamento (livre, máquina, halter, barra, elástico etc.)
+
+Séries
+
+Repetições OU tempo (escolha reps ou tempo)
+
+Carga (opcional)
+
+Descanso entre séries
+
+Vídeo (URL)
+
+Observações específicas
+
+Botões:
+
+Adicionar exercício
+
+Reordenar exercícios (drag & drop se possível)
+
+Salvar como preset
+
+Banco de presets:
+
+Todo treino pode ter um toggle:
+
+“Salvar este treino no meu banco de presets”
+
+Botão “Aplicar treino a um aluno” abre modal:
+
+Selecionar aluno
+
+Datas de início e fim
+
+Status (ativo, programado, concluído)
+
+Após aplicar, o treino passa a aparecer na área do aluno.
+
+1.2 CRIAR TREINO COM IA – Treino + Alimentação + Suplementos
+
+Na section “Criar treino com IA”, criar um card grande com:
+
+Título: “Crie um treino com ajuda de IA”
+
+Subtítulo explicando que futuramente a IA será treinada com dados do personal e do aluno.
+
+Formulário para geração com IA:
+
+Selecionar aluno (dropdown) ou opção “sem aluno específico”
+
+Objetivo principal do aluno
+
+Nível de experiência
+
+Frequência semanal desejada
+
+Restrições físicas/lesões (textarea)
+
+Disponibilidade de equipamentos (checkboxes)
+
+Tempo disponível por sessão
+
+Opcional:
+
+Sugestão de plano alimentar (sim/não)
+
+Sugestão de suplementos (sim/não)
+
+Botão principal:
+
+“Gerar proposta de treino com IA”
+
+Comportamento (MVP):
+
+Usar mock de resposta de IA, retornando:
+
+Estrutura de treino (como na criação manual)
+
+Texto “Plano alimentar sugerido”
+
+Texto “Sugestão de suplementos”
+
+Exibir resultado em layout dividido:
+
+Coluna com lista de exercícios sugeridos
+
+Abaixo, cards com plano alimentar e suplementos
+
+O personal deve poder:
+
+Editar o treino sugerido
+
+Salvar como treino próprio
+
+Aplicar a um aluno (usando o mesmo fluxo de aplicação).
+
+Deixar a chamada à IA isolada em um serviço:
+
+POST /ai/workouts/suggest (por enquanto mockado).
+
+1.3 TREINOS EM ALTA – Biblioteca compartilhada Bricks
+
+Criar section “Treinos em alta (Bricks)”:
+
+Comportamento:
+
+Ao criar/editar um treino, o personal pode ativar um toggle:
+
+“Permitir que este treino apareça como Treino em alta no Bricks”
+
+Apenas treinos com esse toggle ativo entram no ranking.
+
+UI/UX:
+
+Grid de cards com:
+
+Nome do treino
+
+Objetivo
+
+Nível
+
+Tipo/grupo (Full body, ABC, HIIT etc.)
+
+Quantidade de personal trainers usando o treino (ex.: “Usado por 18 personais”)
+
+Quantidade de alunos ativos com esse treino
+
+Rating médio (se houver avaliações)
+
+Filtros por objetivo, nível e tipo de treino.
+
+Botão no card: “Ver detalhes do treino”
+
+Na tela de detalhes:
+
+Lista completa de exercícios
+
+Botões:
+
+“Salvar no meu Bricks” (cria cópia no banco do personal)
+
+“Aplicar a um aluno” (usa o fluxo de aplicação)
+
+Criar componentes reutilizáveis:
+
+WorkoutCard, WorkoutForm, ExerciseRow, AssignWorkoutModal, AIWorkoutForm, TrendingWorkoutCard.
+
+Endpoints/mocks:
+
+/workouts (CRUD)
+
+/workouts/assign
+
+/workouts/trending
+
+/ai/workouts/suggest
+
+🔔 2. MÓDULO “NOTIFICAÇÕES” (MENU + DASHBOARD)
+2.1 Integração no layout
+
+Adicionar no menu lateral item “Notificações” com ícone de sino.
+
+Na Dashboard do personal, incluir um card-resumo:
+
+Nº de notificações enviadas hoje
+
+Nº de notificações agendadas
+
+Botão “Criar notificação” que leva à página de Notificações.
+
+2.2 Página principal de Notificações
+
+Página com título “Criar notificação” e três cards clicáveis:
+
+Enviar na hora – “Seu aluno receberá a notificação imediatamente”
+
+Agendar – “Defina um dia e horário específico para o envio”
+
+Recorrentes – “Defina dias e horários recorrentes para o envio”
+
+Cada card com:
+
+Ícone circular
+
+Título
+
+Subtítulo
+
+Hover com glow em #b6ff00.
+
+Ao clicar, abrir o fluxo respectivo.
+
+2.3 Estrutura base da notificação (comum aos 3 modos)
+
+Formulário com:
+
+Destinatário(s):
+
+Um aluno específico (dropdown com busca)
+
+Grupo de alunos (ex.: todos ativos, “em treinamento” etc.)
+
+Título da notificação
+
+Mensagem (textarea)
+
+Canal (para futuro): dropdown com
+
+In-app (Bricks)
+
+E-mail
+
+WhatsApp (placeholder)
+
+Toggle: “Salvar como modelo de notificação”.
+
+2.4 Fluxo “Enviar na hora”
+
+Mostrar formulário base.
+
+Botão: “Enviar agora”.
+
+Chamar (ou mockar) POST /notifications/send-now.
+
+Exibir feedback de sucesso/erro.
+
+2.5 Fluxo “Agendar”
+
+Além dos campos base, adicionar:
+
+Data do envio (date picker)
+
+Horário do envio (time picker)
+
+Botão: “Agendar notificação” → POST /notifications/schedule.
+
+Mostrar abaixo uma lista de notificações agendadas com:
+
+Data/hora
+
+Título
+
+Público-alvo
+
+Status (Agendada / Enviada / Cancelada)
+
+Ações: Editar / Cancelar.
+
+2.6 Fluxo “Recorrentes”
+
+Além dos campos base, adicionar:
+
+Frequência:
+
+Diária
+
+Semanal (selecionar dias)
+
+Mensal (dia do mês)
+
+Horário fixo do envio.
+
+Botão: “Criar notificação recorrente” → POST /notifications/recurring.
+
+Lista de recorrentes:
+
+Título
+
+Tipo de recorrência (ex.: “Seg, Qua, Sex às 07:00”)
+
+Público-alvo
+
+Status (Ativa / Pausada)
+
+Botões: Pausar / Editar / Excluir.
+
+2.7 Histórico de notificações
+
+Tabela/lista com:
+
+Data/hora de envio
+
+Tipo (Imediata / Agendada / Recorrente)
+
+Título
+
+Público-alvo
+
+Status (Enviada, Erro, Agendada, Cancelada)
+
+Filtros por tipo e status + busca por título/destinatário.
+
+Endpoints/mocks:
+
+POST /notifications/send-now
+
+POST /notifications/schedule
+
+POST /notifications/recurring
+
+GET /notifications, /notifications/scheduled, /notifications/recurring
+
+PATCH /notifications/:id
+
+DELETE /notifications/:id
+
+Criar componentes:
+
+NotificationModeCard, NotificationForm, ScheduledNotificationList, RecurringNotificationList, NotificationHistoryTable.
+
+👤 3. FLUXO DE CRIAÇÃO/ATIVAÇÃO DE ALUNO + PRIMEIRO ACESSO
+3.1 Modal de credenciais do aluno
+
+Cenários:
+
+Após cadastro manual de novo aluno
+
+Após aprovação dos dados preenchidos via link
+
+Assim que o backend criar/ativar o aluno, abrir um modal com:
+
+Ícone (paper plane)
+
+Título: “Envie estas informações para o seu aluno”
+
+Box com:
+
+Login: e-mail do aluno
+
+Senha temporária: senha gerada automaticamente
+
+Botão/link “Copiar” que copia o texto:
+
+Olá! Essas são suas credenciais de acesso ao Bricks: Login: {email} | Senha: {senha_temporaria}
+
+Botão grande “Enviar via WhatsApp”:
+
+Abre https://wa.me com mensagem pré-preenchida:
+
+“Olá, aqui é seu personal pelo app Bricks! Seguem suas credenciais de acesso: Login: {email} | Senha: {senha_temporaria}. Acesse, atualize sua senha e veja seus treinos 😊”
+
+Botão secundário: “Fechar”
+
+3.2 Senha temporária e segurança
+
+Ao criar aluno, gerar senha temporária forte (8–10 caracteres, mix de maiúsculas, minúsculas, números).
+
+Salvar apenas o hash no banco.
+
+Campo booleano no aluno: mustChangePasswordOnFirstLogin: true.
+
+3.3 Fluxo de primeiro login
+
+Quando o aluno logar:
+
+Se mustChangePasswordOnFirstLogin === true:
+
+Redirecionar para tela “Definir nova senha” antes de qualquer outra.
+
+Campos:
+
+Senha atual (temporária)
+
+Nova senha
+
+Confirmar nova senha
+
+Validações: tamanho mínimo, confirmação igual etc.
+
+Ao salvar:
+
+Atualizar hash da senha
+
+Setar mustChangePasswordOnFirstLogin = false
+
+Redirecionar para o dashboard do aluno.
+
+3.4 Reenvio/Reset de acesso pelo personal
+
+Na tela de detalhes do aluno (painel do personal):
+
+Section com botão “Enviar instruções de acesso”.
+
+Ao clicar:
+
+Gerar nova senha temporária
+
+Atualizar hash + mustChangePasswordOnFirstLogin = true
+
+Abrir o mesmo StudentCredentialsModal com login + nova senha
+
+Permitir copiar/enviar via WhatsApp.
+
+Criar componentes:
+
+StudentCredentialsModal
+
+FirstAccessPasswordForm
+
+SendAccessInstructionsButton.
+
+Endpoints sugeridos:
+
+/auth/create-student → retorna e-mail + senha temporária (apenas na resposta).
+
+/auth/first-access/change-password
+
+/students/:id/reset-access.
+
+🎟 4. MÓDULO “EVENTOS” (MENU LATERAL)
+
+Adicionar item “Eventos” no menu lateral (ícone de calendário esportivo).
+
+4.1 Objetivo
+
+Exibir eventos esportivos parceiros (corridas, maratonas, trilhas, workshops, triathlon etc.), com:
+
+Filtros por cidade, localização, data e tipo
+
+Descontos especiais Bricks para alunos e personais.
+
+4.2 Layout
+
+Filtros no topo:
+
+Cidade (dropdown)
+
+Distância/raio (5 km, 10 km, 20 km…)
+
+Tipo de evento (Corrida de rua, Maratona, Ciclismo, Treinão funcional, Workshop fitness, Trail Run, Triathlon…)
+
+Data (calendário ou intervalo).
+
+Listagem de eventos (cards):
+
+Cada card mostra:
+
+Imagem do evento
+
+Nome
+
+Data
+
+Cidade
+
+Distância (5k, 10k, 21k etc.)
+
+Preço normal
+
+Preço com desconto Bricks
+
+Selo “🔥 Desconto especial Bricks” se aplicável
+
+Botão “Mais detalhes”
+
+Página de detalhes:
+
+Banner grande
+
+Nome
+
+Local + mapa (mock)
+
+Data e horário
+
+Descrição completa
+
+Categorias (5k/10k/21k/42k etc.)
+
+Valores normal x Bricks
+
+Benefícios exclusivos Bricks (kit, VIP, etc.)
+
+Botões:
+
+“Inscrever-se com desconto Bricks”
+
+“Salvar na agenda” (integra com módulo Agenda).
+
+Usar mocks de eventos, como:
+
+Bricks Run – 5k & 10k – São Paulo (Parque Ibirapuera, R$120 / R$89)
+
+Desafio Serra Trail Run – Florianópolis (R$220 / R$179)
+
+Workshop Performance – Treinamento Funcional – BH (R$190 / R$150)
+
+Triathlon Experience – Rio de Janeiro (R$350 / R$310)
+
+Night Run Curitiba – Edição Neon (R$140 / R$110)
+
+Endpoints/mocks:
+
+GET /events
+
+GET /events/:id
+
+GET /events/nearby?city=&radius=&date=&type=
+
+Criar componentes: EventCard, EventFilters, EventDetailsPage.
+
+🛒 5. MÓDULO “LOJA” (MENU LATERAL)
+
+Adicionar item “Loja” no menu lateral (ícone de sacola).
+
+5.1 Objetivo
+
+Marketplace de produtos fitness para alunos e personais:
+
+Suplementos
+
+Moda fitness
+
+Acessórios
+
+Equipamentos
+
+Garrafas térmicas
+
+Kits funcionais etc.
+
+Com descontos Bricks quando aplicável.
+
+5.2 Layout da Loja
+
+Filtros:
+
+Categoria (Suplementos, Moda Fitness, Acessórios, Equipamentos)
+
+Faixa de preço
+
+Marca
+
+Destaques (mais vendidos, novos, desconto Bricks).
+
+Listagem de produtos (cards):
+
+Cada card:
+
+Foto
+
+Nome
+
+Marca
+
+Preço
+
+Preço Bricks (se existir)
+
+Tags: “Mais vendido”, “🔥 Desconto Bricks”, “Novo”
+
+Botão “Ver produto”
+
+Detalhe do produto:
+
+Carrossel de imagens
+
+Nome, marca, descrição
+
+Preço normal x Bricks
+
+Tamanhos/variações (quando houver)
+
+Campo quantidade
+
+Botão “Adicionar ao carrinho” (carrinho pode ser mockado)
+
+Recomendações relacionadas.
+
+Produtos fictícios para mock:
+
+Whey Protein Bricks – Baunilha (R$169 / R$149)
+
+Camiseta Dry-Fit Bricks Performance (R$79)
+
+Garrafa Térmica Aço Inox 1L – Bricks (R$129 / R$109)
+
+Faixa Elástica Nível Forte (R$39)
+
+Kit Funcional Bricks – Corda + Mini Bands + Cones (R$199 / R$179)
+
+Legging Bricks Pro Feminina (R$149)
+
+Endpoints/mocks:
+
+GET /products
+
+GET /products/:id
+
+GET /products?category=&priceRange=
+
+Criar componentes: StoreProductCard, StoreFilters, ProductDetailsPage.
+
+✅ ENTREGA FINAL ESPERADA
+
+Módulo Treinos completo (manual + IA + trending).
+
+Módulo Notificações completo (imediatas, agendadas, recorrentes + histórico).
+
+Fluxo de criação/ativação de aluno com modal de credenciais, envio por WhatsApp e troca obrigatória de senha no primeiro login.
+
+Módulo Eventos com filtros, detalhes e exemplos de eventos parceiros.
+
+Módulo Loja com produtos fictícios, filtros e página de detalhes.
+
+Tudo seguindo o design dark premium do Bricks, com código limpo, bem componentizado e fácil de manter.
