@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AppLayout } from "@/components/layout/app-layout";
+import { NewStudentModal } from "@/components/dashboard/NewStudentModal";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -32,6 +33,7 @@ import {
   Plus,
   Loader2,
   Mail,
+  UserPlus,
 } from "lucide-react";
 
 interface StudentWithUser {
@@ -58,6 +60,7 @@ export default function StudentsPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAssignWorkoutOpen, setIsAssignWorkoutOpen] = useState(false);
+  const [isNewStudentOpen, setIsNewStudentOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<StudentWithUser | null>(null);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string>("");
 
@@ -121,6 +124,10 @@ export default function StudentsPage() {
               data-testid="input-search-student"
             />
           </div>
+          <Button onClick={() => setIsNewStudentOpen(true)} data-testid="button-new-student">
+            <UserPlus className="w-4 h-4 mr-2" />
+            Novo Aluno
+          </Button>
         </div>
 
         {isLoading ? (
@@ -305,6 +312,8 @@ export default function StudentsPage() {
             )}
           </DialogContent>
         </Dialog>
+
+        <NewStudentModal open={isNewStudentOpen} onOpenChange={setIsNewStudentOpen} />
       </div>
     </AppLayout>
   );
