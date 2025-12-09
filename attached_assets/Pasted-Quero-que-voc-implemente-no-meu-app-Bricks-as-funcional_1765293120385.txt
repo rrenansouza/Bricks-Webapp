@@ -1,0 +1,432 @@
+Quero que você implemente no meu app Bricks as funcionalidades abaixo, usando Next.js + React + TailwindCSS no frontend e integrando com os endpoints já existentes (ou criando mocks se faltar algum).
+O design deve seguir o estilo dark premium minimalista, com a paleta:
+
+Principal: #002c2b
+
+Secundária (destaques e botões): #b6ff00
+
+Terciária (textos e elementos neutros): #f7f7f7
+
+O layout deve ser moderno, elegante, responsivo e profissional.
+
+🧱 1. SISTEMA DE CRIAÇÃO DE NOVO ALUNO
+
+No perfil do Personal Trainer, adicionar um serviço/botão chamado:
+
++ Novo Aluno
+
+Ao clicar, abrir um modal ou página com 2 opções:
+
+Opção A — Personal cadastra manualmente
+
+Mostrar formulário com os campos:
+
+📌 Foto do aluno (opcional)
+
+Upload simples com preview.
+
+📌 Dados pessoais do aluno
+
+Nome completo
+
+E-mail
+
+Contato (telefone/WhatsApp)
+
+Idade (número)
+
+CPF (validar se é válido e existente)
+
+Estado civil
+
+Gênero
+
+Sexo biológico
+
+Data de nascimento (date picker)
+
+📌 Endereço
+
+Campo CEP
+
+Assim que o CEP for preenchido → auto-preencher:
+
+Rua
+
+Bairro
+
+Cidade
+
+Estado
+
+Número (manual)
+
+Complemento (manual)
+
+(Use API ViaCEP ou serviço equivalente.)
+
+📌 Convenio
+
+Campo texto simples.
+
+📌 Status do aluno — Dropdown
+
+Valores:
+
+Em treinamento
+
+Consulta Avulsa
+
+📌 Como conheceu o Personal — Dropdown
+
+Indicação Amigo
+
+Indicação outros profissionais
+
+Mídias sociais
+
+Panfleto
+
+Google
+
+Eventos
+
+Outros
+
+Após salvar:
+
+O aluno deve ser criado no banco e ficar disponível para:
+
+Receber treinos
+
+Receber agendamentos
+
+Aparecer na dashboard
+
+Exibir presença semanal
+
+Exibir progresso nos treinos
+
+🧱 1.2 — Opção B: Personal envia link de autocadastro
+
+O botão "Enviar link de cadastro para o aluno" deve gerar:
+
+Um link único para o aluno preencher os dados sozinho
+
+Ao enviar, o aluno completa o formulário
+
+O personal recebe notificação para aprovar
+
+Ao aprovar → aluno é criado no banco e vinculado ao personal
+
+Manter a mesma validação e estrutura da Opção A.
+
+🧱 2. DASHBOARD PROFISSIONAL DO PERSONAL (BRICKS)
+
+Criar a dashboard seguindo o padrão dark premium, inspirada no produto Vedius mas adaptada ao Bricks.
+
+🔥 2.1 – KPI Cards (no topo)
+
+Criar cards modernos exibindo:
+
+Total de alunos ativos
+
+Aulas agendadas para hoje
+
+Treinos ativos enviados
+
+Progresso dos alunos (treinos concluídos hoje/semana)
+
+Pendências do personal (tarefas atrasadas)
+
+Cards devem ter:
+
+Neon #b6ff00 em detalhes
+
+Ícones limpos
+
+Hover suave
+
+Tipografia grande
+
+🗓 2.2 – Agenda do Dia (Mini Calendar + Lista)
+
+Mostre:
+
+Próximas aulas
+
+Status: confirmado, pendente, cancelado
+
+Horários e blocos coloridos
+
+Botão: "Ver agenda completa"
+
+🎉 2.3 – Aniversariantes do mês
+
+Listar:
+
+Nome
+
+Data
+
+Botão “Enviar mensagem”
+
+Caso vazio:
+
+“Nenhum aniversariante neste mês.”
+
+📈 2.4 – Gráfico de produtividade semanal
+
+Gráfico mostrando:
+
+Treinos concluídos por dia
+
+Engajamento (%)
+
+Estilo neon com fundo escuro.
+
+💰 2.5 – Módulo Financeiro
+
+Exibir:
+
+Faturamento do mês
+
+Faturamento anual
+
+Faturamento acumulado
+
+Comparação com mês anterior
+
+Gráfico horizontal exibindo:
+
+Presencial
+
+Consultoria online
+
+Planos recorrentes
+
+Se o personal não usa financeiro → mostrar CTA:
+
+“Ative o financeiro do Bricks!”
+
+🧩 2.6 – Distribuição dos tipos de alunos (Donut Chart)
+
+Exemplo de categorias:
+
+Emagrecimento
+
+Hipertrofia
+
+Corrida
+
+Funcional
+
+Mostrar porcentagens.
+
+🌍 2.7 – Distribuição geográfica dos alunos
+
+Donut ou barras:
+
+Mesmo bairro
+
+Mesma cidade
+
+Online
+
+Filtros opcionais.
+
+⏱ 2.8 – Tempo Ocupado (Agenda Load)
+
+Barra dividida:
+
+Tempo ocupado
+
+Tempo livre
+
+% agendado
+
+⭐ 2.9 – Avaliações recentes
+
+Nome do aluno
+
+Estrelas
+
+Comentário curto
+
+Botão para ver todos
+
+🧱 3. AGENDA COMPLETA DO PERSONAL – BRICKS
+
+A agenda deve ter nível SaaS e seguir a referência visual da Vedius, adaptada ao estilo do Bricks.
+
+🗓 3.1 – Layout Principal
+
+Criar:
+
+Calendário semanal grande (estilo time blocking)
+
+Horários na lateral (9h às 21h)
+
+Colunas de segunda a domingo
+
+Blocos de eventos coloridos
+
+Lateral direita:
+
+Mini calendário mensal
+
+Campo Pesquisar
+
+Botão + Novo Agendamento
+
+🧱 3.2 – Modal “Novo Agendamento” com duas abas
+ABA 1 — Paciente
+
+Campos:
+
+Selecionar aluno (dropdown + busca)
+
+Data
+
+Início
+
+Fim
+
+Local do atendimento
+
+Tempo de deslocamento
+
+Observações (textarea + contador)
+
+Toggle: “Adicionar pagamento único”
+
+Regras:
+
+Validar conflito de horários
+
+Se conflito, mostrar alerta claro
+
+Preencher automaticamente personal_id
+
+Estilização neon minimal
+
+ABA 2 — Evento
+
+Campos:
+
+Nome do evento
+
+Data
+
+Início / Fim
+
+Cor do evento
+
+Toggle Evento recorrente
+
+Local do evento
+
+Tempo de deslocamento
+
+Observações
+
+Salvar como tipo evento pessoal.
+
+🧱 3.3 – Busca na Agenda
+
+O campo Pesquisar deve procurar por:
+
+Nome do aluno
+
+Tipo de evento
+
+Observações
+
+Resultados aparecem diretamente no calendário.
+
+🧱 3.4 – Interação com agendamentos
+
+Clicar no bloco → abrir modal para editar
+
+Opções: Salvar / Excluir
+
+Eventos recorrentes devem atualizar individualmente ou toda a série
+(para MVP, pode ser apenas individual)
+
+🧱 4. ESTILO E COMPONENTIZAÇÃO
+
+Criar componentes:
+
+DashboardStatsCard
+
+DonutChart
+
+BarChart
+
+WeekCalendar
+
+AppointmentBlock
+
+MiniCalendar
+
+NewAppointmentModal
+
+Tabs
+
+StudentCreationForm
+
+StudentReviewPanel
+
+StudentSummaryCard
+
+Todos devem usar:
+
+Fundo: #002c2b
+
+Texto: #f7f7f7
+
+Destaques neon: #b6ff00
+
+Bordas suaves
+
+Animações leves de hover
+
+🧱 5. INTEGRAÇÃO COM BACKEND
+
+Usar endpoints:
+
+/students
+
+/students/create
+
+/appointments
+
+/appointments/student
+
+/appointments/event
+
+/financial
+
+/reviews
+
+Se algum endpoint não existir → gerar mock data isolado.
+
+🧱 6. ENTREGA FINAL ESPERADA
+
+Gerar:
+
+Páginas
+
+Componentes
+
+Modais
+
+Integrações
+
+Estilos TailwindCSS
+
+Fluxos completos de criação de aluno, agenda e dashboard
+
+Código organizado em pastas claras
+
+O resultado final deve ser uma interface profissional, intuitiva, moderna e alinhada ao padrão premium do Bricks.

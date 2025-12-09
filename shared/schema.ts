@@ -9,6 +9,13 @@ export const appointmentStatusEnum = pgEnum("appointment_status", ["pending", "c
 export const workoutStatusEnum = pgEnum("workout_status", ["active", "completed", "paused"]);
 export const planTypeEnum = pgEnum("plan_type", ["monthly", "quarterly", "semiannual", "annual"]);
 export const planStatusEnum = pgEnum("plan_status", ["active", "inactive", "expired"]);
+export const studentStatusEnum = pgEnum("student_status", ["training", "single_consultation"]);
+export const genderEnum = pgEnum("gender", ["male", "female", "other", "prefer_not_say"]);
+export const biologicalSexEnum = pgEnum("biological_sex", ["male", "female"]);
+export const maritalStatusEnum = pgEnum("marital_status", ["single", "married", "divorced", "widowed", "other"]);
+export const referralSourceEnum = pgEnum("referral_source", ["friend", "professional", "social_media", "flyer", "google", "events", "other"]);
+export const eventTypeEnum = pgEnum("event_type", ["appointment", "personal_event"]);
+export const registrationStatusEnum = pgEnum("registration_status", ["pending", "approved", "rejected"]);
 
 // Users table - base authentication
 export const users = pgTable("users", {
@@ -43,6 +50,54 @@ export const students = pgTable("students", {
   personalId: varchar("personal_id", { length: 36 }).references(() => personalProfiles.id, { onDelete: "set null" }),
   goals: text("goals"),
   notes: text("notes"),
+  phone: text("phone"),
+  age: integer("age"),
+  cpf: text("cpf"),
+  maritalStatus: maritalStatusEnum("marital_status"),
+  gender: genderEnum("gender"),
+  biologicalSex: biologicalSexEnum("biological_sex"),
+  birthDate: timestamp("birth_date"),
+  cep: text("cep"),
+  street: text("street"),
+  neighborhood: text("neighborhood"),
+  city: text("city"),
+  state: text("state"),
+  addressNumber: text("address_number"),
+  complement: text("complement"),
+  healthInsurance: text("health_insurance"),
+  studentStatus: studentStatusEnum("student_status").default("training"),
+  referralSource: referralSourceEnum("referral_source"),
+  registrationStatus: registrationStatusEnum("registration_status").default("approved"),
+  registrationToken: text("registration_token"),
+  category: text("category"),
+});
+
+// Personal events (non-student appointments)
+export const personalEvents = pgTable("personal_events", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  personalId: varchar("personal_id", { length: 36 }).notNull().references(() => personalProfiles.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  color: text("color").default("#b6ff00"),
+  isRecurring: boolean("is_recurring").default(false),
+  location: text("location"),
+  travelTime: integer("travel_time"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Financial records
+export const financialRecords = pgTable("financial_records", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  personalId: varchar("personal_id", { length: 36 }).notNull().references(() => personalProfiles.id, { onDelete: "cascade" }),
+  studentId: varchar("student_id", { length: 36 }).references(() => students.id, { onDelete: "set null" }),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  type: text("type").notNull(),
+  category: text("category"),
+  description: text("description"),
+  date: timestamp("date").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Workouts created by personals
@@ -101,6 +156,10 @@ export const appointments = pgTable("appointments", {
   endTime: timestamp("end_time").notNull(),
   status: appointmentStatusEnum("status").default("pending").notNull(),
   notes: text("notes"),
+  location: text("location"),
+  travelTime: integer("travel_time"),
+  hasSinglePayment: boolean("has_single_payment").default(false),
+  paymentAmount: decimal("payment_amount", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -317,6 +376,24 @@ export const personalExperienceRelations = relations(personalExperience, ({ one 
   }),
 }));
 
+export const personalEventsRelations = relations(personalEvents, ({ one }) => ({
+  personal: one(personalProfiles, {
+    fields: [personalEvents.personalId],
+    references: [personalProfiles.id],
+  }),
+}));
+
+export const financialRecordsRelations = relations(financialRecords, ({ one }) => ({
+  personal: one(personalProfiles, {
+    fields: [financialRecords.personalId],
+    references: [personalProfiles.id],
+  }),
+  student: one(students, {
+    fields: [financialRecords.studentId],
+    references: [students.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertPersonalProfileSchema = createInsertSchema(personalProfiles).omit({ id: true });
@@ -332,6 +409,34 @@ export const insertQuoteRequestSchema = createInsertSchema(quoteRequests).omit({
 export const insertPersonalGallerySchema = createInsertSchema(personalGallery).omit({ id: true, createdAt: true });
 export const insertPersonalServiceSchema = createInsertSchema(personalServices).omit({ id: true });
 export const insertPersonalExperienceSchema = createInsertSchema(personalExperience).omit({ id: true });
+export const insertPersonalEventSchema = createInsertSchema(personalEvents).omit({ id: true, createdAt: true });
+export const insertFinancialRecordSchema = createInsertSchema(financialRecords).omit({ id: true, createdAt: true });
+
+// Student creation form validation
+export const createStudentFormSchema = z.object({
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().optional(),
+  age: z.number().min(1).max(120).optional(),
+  cpf: z.string().optional(),
+  maritalStatus: z.enum(["single", "married", "divorced", "widowed", "other"]).optional(),
+  gender: z.enum(["male", "female", "other", "prefer_not_say"]).optional(),
+  biologicalSex: z.enum(["male", "female"]).optional(),
+  birthDate: z.string().optional(),
+  cep: z.string().optional(),
+  street: z.string().optional(),
+  neighborhood: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  addressNumber: z.string().optional(),
+  complement: z.string().optional(),
+  healthInsurance: z.string().optional(),
+  studentStatus: z.enum(["training", "single_consultation"]).optional(),
+  referralSource: z.enum(["friend", "professional", "social_media", "flyer", "google", "events", "other"]).optional(),
+  category: z.string().optional(),
+  goals: z.string().optional(),
+  notes: z.string().optional(),
+});
 
 // Registration schema with validation
 export const registerSchema = z.object({
@@ -385,6 +490,11 @@ export type PersonalService = typeof personalServices.$inferSelect;
 export type InsertPersonalService = z.infer<typeof insertPersonalServiceSchema>;
 export type PersonalExperienceItem = typeof personalExperience.$inferSelect;
 export type InsertPersonalExperienceItem = z.infer<typeof insertPersonalExperienceSchema>;
+export type PersonalEvent = typeof personalEvents.$inferSelect;
+export type InsertPersonalEvent = z.infer<typeof insertPersonalEventSchema>;
+export type FinancialRecord = typeof financialRecords.$inferSelect;
+export type InsertFinancialRecord = z.infer<typeof insertFinancialRecordSchema>;
+export type CreateStudentForm = z.infer<typeof createStudentFormSchema>;
 
 // Extended types for API responses
 export type PersonalWithUser = PersonalProfile & { user: User; studentCount?: number };
