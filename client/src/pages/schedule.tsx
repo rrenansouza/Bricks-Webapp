@@ -505,7 +505,12 @@ export default function SchedulePage() {
                     Agendar Aula
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-card border-border max-w-md">
+                {/* 
+                  max-h-[90vh] e overflow-y-auto garantem que o modal tenha scroll interno
+                  quando o conteúdo for maior que a altura da tela, evitando corte de conteúdo
+                  em telas menores (notebooks, dispositivos móveis, etc.)
+                */}
+                <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Agendar Aula com Aluno</DialogTitle>
                   </DialogHeader>
@@ -664,7 +669,12 @@ export default function SchedulePage() {
                     Novo Evento
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-card border-border max-w-md">
+                {/* 
+                  max-h-[90vh] e overflow-y-auto garantem que o modal tenha scroll interno
+                  quando o conteúdo for maior que a altura da tela, evitando corte de conteúdo
+                  em telas menores (notebooks, dispositivos móveis, etc.)
+                */}
+                <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Criar Evento Pessoal</DialogTitle>
                   </DialogHeader>
