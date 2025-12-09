@@ -7,6 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useAuth } from "@/lib/auth";
 import {
+  StatsCard,
+  DonutChart,
+  BarChart,
+  BirthdayList,
+  FinancialSummary,
+} from "@/components/dashboard";
+import {
   Users,
   Dumbbell,
   Calendar,
@@ -15,6 +22,8 @@ import {
   Clock,
   ChevronRight,
   Star,
+  DollarSign,
+  Cake,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,8 +31,12 @@ import { ptBR } from "date-fns/locale";
 interface DashboardStats {
   totalStudents: number;
   activeWorkouts: number;
-  upcomingAppointments: number;
+  todayAppointments: number;
   averageRating: number;
+  weeklyProductivity: { day: string; value: number }[];
+  birthdays: { id: string; name: string; birthDate: string; photoUrl?: string }[];
+  studentDistribution: { name: string; value: number; color: string }[];
+  financialSummary: { income: number; expenses: number; pendingPayments: number };
 }
 
 interface RecentAppointment {
@@ -52,7 +65,7 @@ export default function PersonalDashboard() {
   const { user } = useAuth();
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/personals/stats"],
+    queryKey: ["/api/dashboard/stats"],
   });
 
   const { data: appointments, isLoading: appointmentsLoading } = useQuery<RecentAppointment[]>({
@@ -96,64 +109,31 @@ export default function PersonalDashboard() {
             </>
           ) : (
             <>
-              <Card className="bg-card border-border/50 slide-up" style={{ animationDelay: "0ms" }}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Alunos</p>
-                      <p className="text-3xl font-bold">{stats?.totalStudents || 0}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Users className="w-6 h-6 text-primary" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border-border/50 slide-up" style={{ animationDelay: "50ms" }}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Treinos Ativos</p>
-                      <p className="text-3xl font-bold">{stats?.activeWorkouts || 0}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Dumbbell className="w-6 h-6 text-primary" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border-border/50 slide-up" style={{ animationDelay: "100ms" }}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Agendamentos</p>
-                      <p className="text-3xl font-bold">{stats?.upcomingAppointments || 0}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Calendar className="w-6 h-6 text-primary" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border-border/50 slide-up" style={{ animationDelay: "150ms" }}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Avaliação</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-3xl font-bold">{stats?.averageRating?.toFixed(1) || "0.0"}</p>
-                        <Star className="w-5 h-5 text-primary fill-primary" />
-                      </div>
-                    </div>
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-primary" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <StatsCard
+                title="Alunos"
+                value={stats?.totalStudents || 0}
+                icon={Users}
+                delay={0}
+              />
+              <StatsCard
+                title="Treinos Ativos"
+                value={stats?.activeWorkouts || 0}
+                icon={Dumbbell}
+                delay={50}
+              />
+              <StatsCard
+                title="Agendamentos Hoje"
+                value={stats?.todayAppointments || 0}
+                icon={Calendar}
+                delay={100}
+              />
+              <StatsCard
+                title="Avaliação"
+                value={stats?.averageRating?.toFixed(1) || "0.0"}
+                subtitle={<Star className="w-4 h-4 text-primary fill-primary" />}
+                icon={TrendingUp}
+                delay={150}
+              />
             </>
           )}
         </div>
@@ -179,7 +159,101 @@ export default function PersonalDashboard() {
           </Link>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-card border-border/50 fade-in lg:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                Produtividade Semanal
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {statsLoading ? (
+                <Skeleton className="h-[200px] w-full" />
+              ) : (
+                <BarChart
+                  data={stats?.weeklyProductivity || []}
+                  height={200}
+                  showXAxis
+                  showYAxis
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border/50 fade-in">
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Distribuição de Alunos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {statsLoading ? (
+                <Skeleton className="h-[200px] w-full" />
+              ) : (
+                <DonutChart
+                  data={stats?.studentDistribution || []}
+                  innerRadius={50}
+                  outerRadius={80}
+                  showLegend
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-card border-border/50 fade-in">
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-primary" />
+                Resumo Financeiro
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {statsLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : (
+                <FinancialSummary
+                  income={stats?.financialSummary?.income || 0}
+                  expenses={stats?.financialSummary?.expenses || 0}
+                  pendingPayments={stats?.financialSummary?.pendingPayments || 0}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border/50 fade-in">
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Cake className="w-5 h-5 text-primary" />
+                Aniversariantes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {statsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="w-10 h-10 rounded-full" />
+                      <div className="flex-1">
+                        <Skeleton className="h-4 w-24 mb-1" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <BirthdayList students={stats?.birthdays || []} />
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="bg-card border-border/50 fade-in">
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-lg">Próximos Agendamentos</CardTitle>
@@ -205,10 +279,11 @@ export default function PersonalDashboard() {
                 </div>
               ) : appointments && appointments.length > 0 ? (
                 <div className="space-y-4">
-                  {appointments.slice(0, 5).map((appointment) => (
+                  {appointments.slice(0, 4).map((appointment) => (
                     <div
                       key={appointment.id}
                       className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover-elevate"
+                      data-testid={`appointment-item-${appointment.id}`}
                     >
                       <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                         <span className="text-primary font-semibold text-sm">
@@ -250,7 +325,9 @@ export default function PersonalDashboard() {
               )}
             </CardContent>
           </Card>
+        </div>
 
+        <div className="grid lg:grid-cols-1 gap-6">
           <Card className="bg-card border-border/50 fade-in">
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-lg">Seus Alunos</CardTitle>
@@ -263,9 +340,9 @@ export default function PersonalDashboard() {
             </CardHeader>
             <CardContent>
               {studentsLoading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
                       <Skeleton className="w-10 h-10 rounded-full" />
                       <div className="flex-1">
                         <Skeleton className="h-4 w-32 mb-2" />
@@ -275,11 +352,12 @@ export default function PersonalDashboard() {
                   ))}
                 </div>
               ) : students && students.length > 0 ? (
-                <div className="space-y-4">
-                  {students.slice(0, 5).map((student) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {students.slice(0, 6).map((student) => (
                     <div
                       key={student.id}
                       className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover-elevate"
+                      data-testid={`student-item-${student.id}`}
                     >
                       <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                         <span className="text-primary font-semibold text-sm">

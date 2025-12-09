@@ -5,7 +5,7 @@ import { ptBR } from "date-fns/locale";
 interface BirthdayStudent {
   id: string;
   name: string;
-  birthDate: Date;
+  birthDate: string | Date;
   photoUrl?: string;
 }
 

@@ -1,10 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
+import { ReactNode } from "react";
 
 interface StatsCardProps {
   title: string;
   value: string | number;
-  subtitle?: string;
+  subtitle?: ReactNode;
   icon: LucideIcon;
   trend?: {
     value: number;
@@ -35,7 +36,7 @@ export function StatsCard({
             <p className="text-sm text-muted-foreground mb-1 truncate">{title}</p>
             <p className="text-3xl font-bold">{value}</p>
             {subtitle && (
-              <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">{subtitle}</div>
             )}
             {trend && (
               <p className={`text-xs mt-1 ${trend.isPositive ? 'text-primary' : 'text-destructive'}`}>
