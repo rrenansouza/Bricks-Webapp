@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Dumbbell, Calendar, User, Search, Users, LogOut, Settings } from "lucide-react";
+import { Home, Dumbbell, Calendar, User, Search, Users, LogOut, Settings, Bell, CalendarDays, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,9 @@ export function DesktopSidebar() {
         { href: "/workouts", icon: Dumbbell, label: "Treinos" },
         { href: "/students", icon: Users, label: "Alunos" },
         { href: "/schedule", icon: Calendar, label: "Agenda" },
+        { href: "/notifications", icon: Bell, label: "Notificações" },
+        { href: "/events", icon: CalendarDays, label: "Eventos" },
+        { href: "/store", icon: ShoppingCart, label: "Loja" },
       ]
     : [
         { href: "/dashboard", icon: Home, label: "Dashboard" },

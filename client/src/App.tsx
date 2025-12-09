@@ -17,6 +17,9 @@ import SchedulePage from "@/pages/schedule";
 import StudentsPage from "@/pages/students";
 import ProfilePage from "@/pages/profile";
 import SettingsPage from "@/pages/settings";
+import NotificationsPage from "@/pages/notifications";
+import EventsPage from "@/pages/events";
+import StorePage from "@/pages/store";
 import { Loader2 } from "lucide-react";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -127,6 +130,24 @@ function Router() {
       <Route path="/settings">
         <ProtectedRoute>
           <SettingsPage />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/notifications">
+        <ProtectedRoute>
+          <NotificationsPage />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/events">
+        <ProtectedRoute>
+          <EventsPage />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/store">
+        <ProtectedRoute>
+          <StorePage />
         </ProtectedRoute>
       </Route>
       
