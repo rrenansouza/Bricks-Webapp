@@ -204,6 +204,41 @@ export async function registerRoutes(
     }
   });
 
+  // Change password (for first access or regular password change)
+  app.post("/api/auth/change-password", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const { newPassword, isFirstAccess } = req.body;
+
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: "A nova senha deve ter pelo menos 6 caracteres" });
+      }
+
+      if (!/[A-Z]/.test(newPassword)) {
+        return res.status(400).json({ message: "A senha deve ter pelo menos uma letra maiúscula" });
+      }
+
+      if (!/[0-9]/.test(newPassword)) {
+        return res.status(400).json({ message: "A senha deve ter pelo menos um número" });
+      }
+
+      const user = await storage.getUserById(req.user!.id);
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password and clear first access flag if applicable
+      await storage.updateUserPassword(user.id, hashedPassword, isFirstAccess ? false : undefined);
+
+      res.json({ message: "Senha alterada com sucesso" });
+    } catch (error) {
+      console.error("Change password error:", error);
+      res.status(500).json({ message: "Erro ao alterar senha" });
+    }
+  });
+
   // =====================
   // PERSONALS ROUTES
   // =====================

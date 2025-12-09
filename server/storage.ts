@@ -62,6 +62,7 @@ export interface IStorage {
   getUserById(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined>;
+  updateUserPassword(id: string, hashedPassword: string, mustChangePasswordOnFirstLogin?: boolean): Promise<User | undefined>;
 
   // Personal Profiles
   createPersonalProfile(profile: InsertPersonalProfile): Promise<PersonalProfile>;
@@ -200,6 +201,15 @@ export class DatabaseStorage implements IStorage {
 
   async updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined> {
     const [updated] = await db.update(users).set(data).where(eq(users.id, id)).returning();
+    return updated;
+  }
+
+  async updateUserPassword(id: string, hashedPassword: string, mustChangePasswordOnFirstLogin?: boolean): Promise<User | undefined> {
+    const updateData: any = { password: hashedPassword };
+    if (mustChangePasswordOnFirstLogin !== undefined) {
+      updateData.mustChangePasswordOnFirstLogin = mustChangePasswordOnFirstLogin;
+    }
+    const [updated] = await db.update(users).set(updateData).where(eq(users.id, id)).returning();
     return updated;
   }
 

@@ -6,3 +6,4 @@ export { BirthdayList } from "./BirthdayList";
 export { WeeklySchedule } from "./WeeklySchedule";
 export { FinancialSummary } from "./FinancialSummary";
 export { NewStudentModal } from "./NewStudentModal";
+export { FirstAccessModal } from "./FirstAccessModal";
