@@ -505,149 +505,145 @@ export default function SchedulePage() {
                     Agendar Aula
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-card border-border max-w-md max-h-[90vh] flex flex-col overflow-hidden">
-                  <DialogHeader className="flex-shrink-0">
+                <DialogContent className="bg-card border-border max-w-md">
+                  <DialogHeader>
                     <DialogTitle>Agendar Aula com Aluno</DialogTitle>
                   </DialogHeader>
                   <Form {...appointmentForm}>
-                    <form onSubmit={appointmentForm.handleSubmit(handleCreateAppointment)} className="flex flex-col flex-1 min-h-0">
-                      <ScrollArea className="flex-1">
-                        <div className="space-y-4 pr-4">
-                          <FormField
-                            control={appointmentForm.control}
-                            name="studentId"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Aluno</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger data-testid="select-student">
-                                      <SelectValue placeholder="Selecione um aluno" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {students?.map((student) => (
-                                      <SelectItem key={student.id} value={student.id}>
-                                        {student.user.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={appointmentForm.control}
-                            name="date"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Data</FormLabel>
+                    <form onSubmit={appointmentForm.handleSubmit(handleCreateAppointment)} className="space-y-4">
+                      <FormField
+                        control={appointmentForm.control}
+                        name="studentId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Aluno</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-student">
+                                  <SelectValue placeholder="Selecione um aluno" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {students?.map((student) => (
+                                  <SelectItem key={student.id} value={student.id}>
+                                    {student.user.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={appointmentForm.control}
+                        name="date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Data</FormLabel>
+                            <FormControl>
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => date < startOfDay(new Date())}
+                                className="rounded-md border"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={appointmentForm.control}
+                          name="startHour"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Inicio</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <Calendar
-                                    mode="single"
-                                    selected={field.value}
-                                    onSelect={field.onChange}
-                                    disabled={(date) => date < startOfDay(new Date())}
-                                    className="rounded-md border"
-                                  />
+                                  <SelectTrigger data-testid="select-apt-start-hour">
+                                    <SelectValue placeholder="Horario" />
+                                  </SelectTrigger>
                                 </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                              control={appointmentForm.control}
-                              name="startHour"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Inicio</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger data-testid="select-apt-start-hour">
-                                        <SelectValue placeholder="Horario" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {TIME_SLOTS.map((hour) => (
-                                        <SelectItem key={hour} value={hour}>
-                                          {hour}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={appointmentForm.control}
-                              name="endHour"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Fim</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger data-testid="select-apt-end-hour">
-                                        <SelectValue placeholder="Horario" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {TIME_SLOTS.map((hour) => (
-                                        <SelectItem key={hour} value={hour}>
-                                          {hour}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          <FormField
-                            control={appointmentForm.control}
-                            name="location"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Local (opcional)</FormLabel>
+                                <SelectContent>
+                                  {TIME_SLOTS.map((hour) => (
+                                    <SelectItem key={hour} value={hour}>
+                                      {hour}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={appointmentForm.control}
+                          name="endHour"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Fim</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <Input placeholder="Ex: Academia X, Parque Y" {...field} data-testid="input-apt-location" />
+                                  <SelectTrigger data-testid="select-apt-end-hour">
+                                    <SelectValue placeholder="Horario" />
+                                  </SelectTrigger>
                                 </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={appointmentForm.control}
-                            name="travelTime"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Tempo de deslocamento (minutos)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" placeholder="Ex: 30" {...field} data-testid="input-apt-travel" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={appointmentForm.control}
-                            name="notes"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Observacoes (opcional)</FormLabel>
-                                <FormControl>
-                                  <Textarea placeholder="Notas sobre a aula..." {...field} data-testid="input-apt-notes" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </ScrollArea>
-                      <div className="flex gap-3 justify-end pt-4 flex-shrink-0 border-t mt-4">
+                                <SelectContent>
+                                  {TIME_SLOTS.map((hour) => (
+                                    <SelectItem key={hour} value={hour}>
+                                      {hour}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={appointmentForm.control}
+                        name="location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Local (opcional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: Academia X, Parque Y" {...field} data-testid="input-apt-location" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={appointmentForm.control}
+                        name="travelTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tempo de deslocamento (minutos)</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Ex: 30" {...field} data-testid="input-apt-travel" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={appointmentForm.control}
+                        name="notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Observacoes (opcional)</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Notas sobre a aula..." {...field} data-testid="input-apt-notes" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex gap-3 justify-end">
                         <Button type="button" variant="outline" onClick={() => setIsAddAppointmentOpen(false)}>
                           Cancelar
                         </Button>
@@ -668,151 +664,147 @@ export default function SchedulePage() {
                     Novo Evento
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-card border-border max-w-md max-h-[90vh] flex flex-col overflow-hidden">
-                  <DialogHeader className="flex-shrink-0">
+                <DialogContent className="bg-card border-border max-w-md">
+                  <DialogHeader>
                     <DialogTitle>Criar Evento Pessoal</DialogTitle>
                   </DialogHeader>
                   <Form {...eventForm}>
-                    <form onSubmit={eventForm.handleSubmit(handleCreateEvent)} className="flex flex-col flex-1 min-h-0">
-                      <ScrollArea className="flex-1">
-                        <div className="space-y-4 pr-4">
-                          <FormField
-                            control={eventForm.control}
-                            name="name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Nome do Evento</FormLabel>
+                    <form onSubmit={eventForm.handleSubmit(handleCreateEvent)} className="space-y-4">
+                      <FormField
+                        control={eventForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome do Evento</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: Reuniao, Consulta, Compromisso" {...field} data-testid="input-event-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={eventForm.control}
+                        name="date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Data</FormLabel>
+                            <FormControl>
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                className="rounded-md border"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={eventForm.control}
+                          name="startHour"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Inicio</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <Input placeholder="Ex: Reuniao, Consulta, Compromisso" {...field} data-testid="input-event-name" />
+                                  <SelectTrigger data-testid="select-evt-start-hour">
+                                    <SelectValue placeholder="Horario" />
+                                  </SelectTrigger>
                                 </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={eventForm.control}
-                            name="date"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Data</FormLabel>
+                                <SelectContent>
+                                  {TIME_SLOTS.map((hour) => (
+                                    <SelectItem key={hour} value={hour}>
+                                      {hour}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={eventForm.control}
+                          name="endHour"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Fim</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <Calendar
-                                    mode="single"
-                                    selected={field.value}
-                                    onSelect={field.onChange}
-                                    className="rounded-md border"
-                                  />
+                                  <SelectTrigger data-testid="select-evt-end-hour">
+                                    <SelectValue placeholder="Horario" />
+                                  </SelectTrigger>
                                 </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                              control={eventForm.control}
-                              name="startHour"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Inicio</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger data-testid="select-evt-start-hour">
-                                        <SelectValue placeholder="Horario" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {TIME_SLOTS.map((hour) => (
-                                        <SelectItem key={hour} value={hour}>
-                                          {hour}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={eventForm.control}
-                              name="endHour"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Fim</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger data-testid="select-evt-end-hour">
-                                        <SelectValue placeholder="Horario" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {TIME_SLOTS.map((hour) => (
-                                        <SelectItem key={hour} value={hour}>
-                                          {hour}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          <FormField
-                            control={eventForm.control}
-                            name="color"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Cor</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger data-testid="select-evt-color">
-                                      <SelectValue placeholder="Selecione uma cor" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {COLORS.map((color) => (
-                                      <SelectItem key={color.value} value={color.value}>
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color.value }} />
-                                          {color.label}
-                                        </div>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={eventForm.control}
-                            name="location"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Local (opcional)</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Ex: Escritorio, Clinica" {...field} data-testid="input-event-location" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={eventForm.control}
-                            name="notes"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Observacoes (opcional)</FormLabel>
-                                <FormControl>
-                                  <Textarea placeholder="Detalhes do evento..." {...field} data-testid="input-event-notes" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </ScrollArea>
-                      <div className="flex gap-3 justify-end pt-4 flex-shrink-0 border-t mt-4">
+                                <SelectContent>
+                                  {TIME_SLOTS.map((hour) => (
+                                    <SelectItem key={hour} value={hour}>
+                                      {hour}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={eventForm.control}
+                        name="color"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cor</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-evt-color">
+                                  <SelectValue placeholder="Selecione uma cor" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {COLORS.map((color) => (
+                                  <SelectItem key={color.value} value={color.value}>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color.value }} />
+                                      {color.label}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={eventForm.control}
+                        name="location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Local (opcional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: Escritorio, Clinica" {...field} data-testid="input-event-location" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={eventForm.control}
+                        name="notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Observacoes (opcional)</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Detalhes do evento..." {...field} data-testid="input-event-notes" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex gap-3 justify-end">
                         <Button type="button" variant="outline" onClick={() => setIsAddEventOpen(false)}>
                           Cancelar
                         </Button>
