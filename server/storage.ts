@@ -1,5 +1,6 @@
 import { db } from "./db";
-import { eq, and, ilike, or, gte, lte, desc } from "drizzle-orm";
+import { eq, and, ilike, or, gte, lte, desc, sql, count } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import {
   users,
   personalProfiles,
@@ -15,6 +16,8 @@ import {
   personalGallery,
   personalServices,
   personalExperience,
+  personalEvents,
+  financialRecords,
   type User,
   type InsertUser,
   type PersonalProfile,
@@ -43,6 +46,10 @@ import {
   type InsertPersonalService,
   type PersonalExperienceItem,
   type InsertPersonalExperienceItem,
+  type PersonalEvent,
+  type InsertPersonalEvent,
+  type FinancialRecord,
+  type InsertFinancialRecord,
   type PersonalWithUser,
   type PersonalWithDetails,
   type StudentWithUser,
@@ -137,6 +144,41 @@ export interface IStorage {
 
   // Extended Personal Profile
   getPersonalWithDetails(id: string): Promise<PersonalWithDetails | undefined>;
+
+  // Personal Events
+  createPersonalEvent(event: InsertPersonalEvent): Promise<PersonalEvent>;
+  getPersonalEventById(id: string): Promise<PersonalEvent | undefined>;
+  getPersonalEventsByPersonalId(personalId: string, startDate?: Date, endDate?: Date): Promise<PersonalEvent[]>;
+  updatePersonalEvent(id: string, data: Partial<InsertPersonalEvent>): Promise<PersonalEvent | undefined>;
+  deletePersonalEvent(id: string): Promise<boolean>;
+
+  // Financial Records
+  createFinancialRecord(record: InsertFinancialRecord): Promise<FinancialRecord>;
+  getFinancialRecordById(id: string): Promise<FinancialRecord | undefined>;
+  getFinancialRecordsByPersonalId(personalId: string, filters?: { startDate?: Date; endDate?: Date; type?: string; category?: string }): Promise<FinancialRecord[]>;
+  updateFinancialRecord(id: string, data: Partial<InsertFinancialRecord>): Promise<FinancialRecord | undefined>;
+  deleteFinancialRecord(id: string): Promise<boolean>;
+  getFinancialSummary(personalId: string, startDate: Date, endDate: Date): Promise<{ income: number; expenses: number }>;
+
+  // Student Registration
+  generateStudentRegistrationToken(personalId: string): Promise<{ studentId: string; token: string }>;
+  getStudentByRegistrationToken(token: string): Promise<Student | undefined>;
+  completeStudentSelfRegistration(token: string, userId: string, data: Partial<InsertStudent>): Promise<Student | undefined>;
+  approveStudent(id: string): Promise<Student | undefined>;
+  rejectStudent(id: string): Promise<Student | undefined>;
+  deleteStudent(id: string): Promise<boolean>;
+
+  // Dashboard Stats
+  getDashboardStats(personalId: string): Promise<{
+    activeStudents: number;
+    todayAppointments: number;
+    activeWorkouts: number;
+    weeklyProductivity: { day: string; count: number }[];
+    monthBirthdays: StudentWithUser[];
+    studentsByStatus: { status: string; count: number }[];
+    studentsByCity: { city: string; count: number }[];
+    pendingStudents: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -597,6 +639,255 @@ export class DatabaseStorage implements IStorage {
       services: servicesList,
       experience: experienceList,
       gallery: galleryList,
+    };
+  }
+
+  // Personal Events
+  async createPersonalEvent(event: InsertPersonalEvent): Promise<PersonalEvent> {
+    const [newEvent] = await db.insert(personalEvents).values(event).returning();
+    return newEvent;
+  }
+
+  async getPersonalEventById(id: string): Promise<PersonalEvent | undefined> {
+    const [event] = await db.select().from(personalEvents).where(eq(personalEvents.id, id));
+    return event;
+  }
+
+  async getPersonalEventsByPersonalId(personalId: string, startDate?: Date, endDate?: Date): Promise<PersonalEvent[]> {
+    const conditions = [eq(personalEvents.personalId, personalId)];
+    
+    if (startDate) {
+      conditions.push(gte(personalEvents.startTime, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(personalEvents.endTime, endDate));
+    }
+    
+    return db
+      .select()
+      .from(personalEvents)
+      .where(and(...conditions))
+      .orderBy(personalEvents.startTime);
+  }
+
+  async updatePersonalEvent(id: string, data: Partial<InsertPersonalEvent>): Promise<PersonalEvent | undefined> {
+    const [updated] = await db.update(personalEvents).set(data).where(eq(personalEvents.id, id)).returning();
+    return updated;
+  }
+
+  async deletePersonalEvent(id: string): Promise<boolean> {
+    const result = await db.delete(personalEvents).where(eq(personalEvents.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Financial Records
+  async createFinancialRecord(record: InsertFinancialRecord): Promise<FinancialRecord> {
+    const [newRecord] = await db.insert(financialRecords).values(record).returning();
+    return newRecord;
+  }
+
+  async getFinancialRecordById(id: string): Promise<FinancialRecord | undefined> {
+    const [record] = await db.select().from(financialRecords).where(eq(financialRecords.id, id));
+    return record;
+  }
+
+  async getFinancialRecordsByPersonalId(
+    personalId: string,
+    filters?: { startDate?: Date; endDate?: Date; type?: string; category?: string }
+  ): Promise<FinancialRecord[]> {
+    const conditions = [eq(financialRecords.personalId, personalId)];
+    
+    if (filters?.startDate) {
+      conditions.push(gte(financialRecords.date, filters.startDate));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(financialRecords.date, filters.endDate));
+    }
+    if (filters?.type) {
+      conditions.push(eq(financialRecords.type, filters.type));
+    }
+    if (filters?.category) {
+      conditions.push(eq(financialRecords.category, filters.category));
+    }
+    
+    return db
+      .select()
+      .from(financialRecords)
+      .where(and(...conditions))
+      .orderBy(desc(financialRecords.date));
+  }
+
+  async updateFinancialRecord(id: string, data: Partial<InsertFinancialRecord>): Promise<FinancialRecord | undefined> {
+    const [updated] = await db.update(financialRecords).set(data).where(eq(financialRecords.id, id)).returning();
+    return updated;
+  }
+
+  async deleteFinancialRecord(id: string): Promise<boolean> {
+    const result = await db.delete(financialRecords).where(eq(financialRecords.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getFinancialSummary(personalId: string, startDate: Date, endDate: Date): Promise<{ income: number; expenses: number }> {
+    const records = await this.getFinancialRecordsByPersonalId(personalId, { startDate, endDate });
+    
+    let income = 0;
+    let expenses = 0;
+    
+    for (const record of records) {
+      const amount = parseFloat(record.amount);
+      if (record.type === "income") {
+        income += amount;
+      } else {
+        expenses += amount;
+      }
+    }
+    
+    return { income, expenses };
+  }
+
+  // Student Registration
+  async generateStudentRegistrationToken(personalId: string): Promise<{ studentId: string; token: string }> {
+    const token = randomUUID();
+    
+    const [newStudent] = await db.insert(students).values({
+      userId: "", // Will be set when student registers
+      personalId,
+      registrationToken: token,
+      registrationStatus: "pending",
+    }).returning();
+    
+    return { studentId: newStudent.id, token };
+  }
+
+  async getStudentByRegistrationToken(token: string): Promise<Student | undefined> {
+    const [student] = await db
+      .select()
+      .from(students)
+      .where(eq(students.registrationToken, token));
+    return student;
+  }
+
+  async completeStudentSelfRegistration(token: string, userId: string, data: Partial<InsertStudent>): Promise<Student | undefined> {
+    const [updated] = await db
+      .update(students)
+      .set({
+        ...data,
+        userId,
+        registrationStatus: "approved",
+        registrationToken: null,
+      })
+      .where(eq(students.registrationToken, token))
+      .returning();
+    return updated;
+  }
+
+  async approveStudent(id: string): Promise<Student | undefined> {
+    const [updated] = await db
+      .update(students)
+      .set({ registrationStatus: "approved" })
+      .where(eq(students.id, id))
+      .returning();
+    return updated;
+  }
+
+  async rejectStudent(id: string): Promise<Student | undefined> {
+    const [updated] = await db
+      .update(students)
+      .set({ registrationStatus: "rejected" })
+      .where(eq(students.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteStudent(id: string): Promise<boolean> {
+    const result = await db.delete(students).where(eq(students.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Dashboard Stats
+  async getDashboardStats(personalId: string): Promise<{
+    activeStudents: number;
+    todayAppointments: number;
+    activeWorkouts: number;
+    weeklyProductivity: { day: string; count: number }[];
+    monthBirthdays: StudentWithUser[];
+    studentsByStatus: { status: string; count: number }[];
+    studentsByCity: { city: string; count: number }[];
+    pendingStudents: number;
+  }> {
+    const allStudents = await this.getStudentsByPersonalId(personalId);
+    const activeStudents = allStudents.filter(s => s.registrationStatus === "approved").length;
+    const pendingStudents = allStudents.filter(s => s.registrationStatus === "pending").length;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const allAppointments = await this.getAppointmentsByPersonalId(personalId);
+    const todayAppointments = allAppointments.filter(a => {
+      const appDate = new Date(a.startTime);
+      return appDate >= today && appDate < tomorrow && a.status !== "cancelled";
+    }).length;
+
+    const allWorkouts = await this.getWorkoutsByPersonalId(personalId);
+    const activeWorkouts = allWorkouts.length;
+
+    // Weekly productivity (last 7 days)
+    const weeklyProductivity: { day: string; count: number }[] = [];
+    const daysOfWeek = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+      
+      const dayCount = allAppointments.filter(a => {
+        const appDate = new Date(a.startTime);
+        return appDate >= date && appDate < nextDate && a.status === "completed";
+      }).length;
+      
+      weeklyProductivity.push({
+        day: daysOfWeek[date.getDay()],
+        count: dayCount,
+      });
+    }
+
+    // Month birthdays
+    const currentMonth = today.getMonth();
+    const monthBirthdays = allStudents.filter(s => {
+      if (!s.birthDate) return false;
+      const birthDate = new Date(s.birthDate);
+      return birthDate.getMonth() === currentMonth;
+    });
+
+    // Students by status
+    const statusCounts: Record<string, number> = {};
+    for (const student of allStudents) {
+      const status = student.studentStatus || "training";
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    }
+    const studentsByStatus = Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
+
+    // Students by city
+    const cityCounts: Record<string, number> = {};
+    for (const student of allStudents) {
+      const city = student.city || "Não informado";
+      cityCounts[city] = (cityCounts[city] || 0) + 1;
+    }
+    const studentsByCity = Object.entries(cityCounts).map(([city, count]) => ({ city, count }));
+
+    return {
+      activeStudents,
+      todayAppointments,
+      activeWorkouts,
+      weeklyProductivity,
+      monthBirthdays,
+      studentsByStatus,
+      studentsByCity,
+      pendingStudents,
     };
   }
 }

@@ -12,6 +12,9 @@ import {
   insertAvailabilitySlotSchema,
   insertAppointmentSchema,
   insertStudentWorkoutSchema,
+  insertPersonalEventSchema,
+  insertFinancialRecordSchema,
+  createStudentFormSchema,
 } from "@shared/schema";
 
 const JWT_SECRET = process.env.SESSION_SECRET || "bricks-secret-key-change-in-production";
@@ -987,6 +990,431 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Get personal details error:", error);
       res.status(500).json({ message: "Erro ao buscar detalhes do personal" });
+    }
+  });
+
+  // =====================
+  // STUDENT MANAGEMENT ROUTES
+  // =====================
+
+  // Create student manually
+  app.post("/api/students/create", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const validatedData = createStudentFormSchema.parse(req.body);
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email já cadastrado" });
+      }
+
+      // Create user with random password (student will reset)
+      const tempPassword = await bcrypt.hash(Math.random().toString(36), 10);
+      const user = await storage.createUser({
+        name: validatedData.name,
+        email: validatedData.email,
+        password: tempPassword,
+        userType: "student",
+      });
+
+      // Create student profile
+      const student = await storage.createStudent({
+        userId: user.id,
+        personalId: profile.id,
+        phone: validatedData.phone,
+        age: validatedData.age,
+        cpf: validatedData.cpf,
+        maritalStatus: validatedData.maritalStatus,
+        gender: validatedData.gender,
+        biologicalSex: validatedData.biologicalSex,
+        birthDate: validatedData.birthDate ? new Date(validatedData.birthDate) : undefined,
+        cep: validatedData.cep,
+        street: validatedData.street,
+        neighborhood: validatedData.neighborhood,
+        city: validatedData.city,
+        state: validatedData.state,
+        addressNumber: validatedData.addressNumber,
+        complement: validatedData.complement,
+        healthInsurance: validatedData.healthInsurance,
+        studentStatus: validatedData.studentStatus,
+        referralSource: validatedData.referralSource,
+        category: validatedData.category,
+        goals: validatedData.goals,
+        notes: validatedData.notes,
+        registrationStatus: "approved",
+      });
+
+      res.status(201).json(student);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Create student error:", error);
+      res.status(500).json({ message: "Erro ao criar aluno" });
+    }
+  });
+
+  // Generate self-registration link
+  app.post("/api/students/generate-link", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const { studentId, token } = await storage.generateStudentRegistrationToken(profile.id);
+      
+      res.status(201).json({
+        studentId,
+        token,
+        registrationUrl: `/register/${token}`,
+      });
+    } catch (error) {
+      console.error("Generate link error:", error);
+      res.status(500).json({ message: "Erro ao gerar link" });
+    }
+  });
+
+  // Student self-registration
+  app.post("/api/students/self-register/:token", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      const { name, email, password, ...profileData } = req.body;
+
+      // Validate token
+      const pendingStudent = await storage.getStudentByRegistrationToken(token);
+      if (!pendingStudent) {
+        return res.status(404).json({ message: "Link de registro inválido ou expirado" });
+      }
+
+      // Check if email already exists
+      let user = await storage.getUserByEmail(email);
+      if (user) {
+        return res.status(400).json({ message: "Email já cadastrado" });
+      }
+
+      // Create new user
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user = await storage.createUser({
+        name,
+        email,
+        password: hashedPassword,
+        userType: "student",
+      });
+
+      // Complete registration
+      const student = await storage.completeStudentSelfRegistration(token, user.id, profileData);
+
+      // Generate JWT token
+      const jwtToken = jwt.sign(
+        { id: user.id, email: user.email, userType: user.userType },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      res.status(201).json({ student, token: jwtToken });
+    } catch (error) {
+      console.error("Self-register error:", error);
+      res.status(500).json({ message: "Erro ao completar registro" });
+    }
+  });
+
+  // Approve student
+  app.patch("/api/students/:id/approve", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const student = await storage.approveStudent(req.params.id);
+      if (!student) {
+        return res.status(404).json({ message: "Aluno não encontrado" });
+      }
+
+      res.json(student);
+    } catch (error) {
+      console.error("Approve student error:", error);
+      res.status(500).json({ message: "Erro ao aprovar aluno" });
+    }
+  });
+
+  // Reject student
+  app.patch("/api/students/:id/reject", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const student = await storage.rejectStudent(req.params.id);
+      if (!student) {
+        return res.status(404).json({ message: "Aluno não encontrado" });
+      }
+
+      res.json(student);
+    } catch (error) {
+      console.error("Reject student error:", error);
+      res.status(500).json({ message: "Erro ao rejeitar aluno" });
+    }
+  });
+
+  // Delete student
+  app.delete("/api/students/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      await storage.deleteStudent(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete student error:", error);
+      res.status(500).json({ message: "Erro ao excluir aluno" });
+    }
+  });
+
+  // =====================
+  // PERSONAL EVENTS ROUTES
+  // =====================
+
+  // Get personal events
+  app.get("/api/personal-events", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const { startDate, endDate } = req.query;
+      const events = await storage.getPersonalEventsByPersonalId(
+        profile.id,
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      );
+
+      res.json(events);
+    } catch (error) {
+      console.error("Get events error:", error);
+      res.status(500).json({ message: "Erro ao buscar eventos" });
+    }
+  });
+
+  // Create personal event
+  app.post("/api/personal-events", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const validatedData = insertPersonalEventSchema.parse({
+        ...req.body,
+        personalId: profile.id,
+      });
+
+      const event = await storage.createPersonalEvent(validatedData);
+      res.status(201).json(event);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Create event error:", error);
+      res.status(500).json({ message: "Erro ao criar evento" });
+    }
+  });
+
+  // Update personal event
+  app.patch("/api/personal-events/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const updated = await storage.updatePersonalEvent(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Evento não encontrado" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Update event error:", error);
+      res.status(500).json({ message: "Erro ao atualizar evento" });
+    }
+  });
+
+  // Delete personal event
+  app.delete("/api/personal-events/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      await storage.deletePersonalEvent(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete event error:", error);
+      res.status(500).json({ message: "Erro ao excluir evento" });
+    }
+  });
+
+  // =====================
+  // FINANCIAL ROUTES
+  // =====================
+
+  // Get financial records
+  app.get("/api/financial", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const { startDate, endDate, type, category } = req.query;
+      const records = await storage.getFinancialRecordsByPersonalId(profile.id, {
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        type: type as string,
+        category: category as string,
+      });
+
+      res.json(records);
+    } catch (error) {
+      console.error("Get financial error:", error);
+      res.status(500).json({ message: "Erro ao buscar registros financeiros" });
+    }
+  });
+
+  // Get financial summary
+  app.get("/api/financial/summary", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      const summary = await storage.getFinancialSummary(profile.id, startOfMonth, endOfMonth);
+      res.json(summary);
+    } catch (error) {
+      console.error("Get financial summary error:", error);
+      res.status(500).json({ message: "Erro ao buscar resumo financeiro" });
+    }
+  });
+
+  // Create financial record
+  app.post("/api/financial", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const validatedData = insertFinancialRecordSchema.parse({
+        ...req.body,
+        personalId: profile.id,
+      });
+
+      const record = await storage.createFinancialRecord(validatedData);
+      res.status(201).json(record);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      console.error("Create financial error:", error);
+      res.status(500).json({ message: "Erro ao criar registro financeiro" });
+    }
+  });
+
+  // Update financial record
+  app.patch("/api/financial/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const updated = await storage.updateFinancialRecord(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Registro não encontrado" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Update financial error:", error);
+      res.status(500).json({ message: "Erro ao atualizar registro" });
+    }
+  });
+
+  // Delete financial record
+  app.delete("/api/financial/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      await storage.deleteFinancialRecord(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete financial error:", error);
+      res.status(500).json({ message: "Erro ao excluir registro" });
+    }
+  });
+
+  // =====================
+  // DASHBOARD STATS ROUTES
+  // =====================
+
+  // Get dashboard stats
+  app.get("/api/dashboard/stats", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const stats = await storage.getDashboardStats(profile.id);
+      res.json(stats);
+    } catch (error) {
+      console.error("Get dashboard stats error:", error);
+      res.status(500).json({ message: "Erro ao buscar estatísticas" });
     }
   });
 
