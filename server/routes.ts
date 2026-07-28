@@ -239,6 +239,73 @@ export async function registerRoutes(
     }
   });
 
+  // Forgot password - generates reset token
+  app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email é obrigatório" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      // Always return 200 to avoid email enumeration
+      if (!user) {
+        return res.json({ message: "Se este email estiver cadastrado, você receberá as instruções." });
+      }
+
+      const token = require("crypto").randomBytes(32).toString("hex");
+      const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await storage.setPasswordResetToken(user.id, token, expiry);
+
+      // Return token directly (no email service configured)
+      res.json({
+        message: "Token de recuperação gerado com sucesso.",
+        resetToken: token,
+        expiresAt: expiry,
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Erro ao processar solicitação" });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token e nova senha são obrigatórios" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "A nova senha deve ter pelo menos 6 caracteres" });
+      }
+
+      if (!/[A-Z]/.test(newPassword)) {
+        return res.status(400).json({ message: "A senha deve ter pelo menos uma letra maiúscula" });
+      }
+
+      if (!/[0-9]/.test(newPassword)) {
+        return res.status(400).json({ message: "A senha deve ter pelo menos um número" });
+      }
+
+      const user = await storage.getUserByResetToken(token);
+      if (!user) {
+        return res.status(400).json({ message: "Token inválido ou expirado" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await storage.updateUserPassword(user.id, hashedPassword);
+      await storage.setPasswordResetToken(user.id, null, null);
+
+      res.json({ message: "Senha redefinida com sucesso" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Erro ao redefinir senha" });
+    }
+  });
+
   // =====================
   // PERSONALS ROUTES
   // =====================

@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
-import { LoginPage, RegisterPage } from "@/pages/auth";
+import { LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage } from "@/pages/auth";
 import PersonalDashboard from "@/pages/dashboard-personal";
 import StudentDashboard from "@/pages/dashboard-student";
 import MarketplacePage from "@/pages/marketplace";
@@ -64,6 +64,8 @@ function Router() {
       <Route path="/" component={LandingPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       
       <Route path="/personals">
         <MarketplacePage />

@@ -32,6 +32,8 @@ export const users = pgTable("users", {
   userType: userTypeEnum("user_type").notNull(),
   photoUrl: text("photo_url"),
   mustChangePasswordOnFirstLogin: boolean("must_change_password_on_first_login").default(false),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpiry: timestamp("password_reset_expiry"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

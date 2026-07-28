@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import { Loader2, ArrowLeft, Dumbbell, User } from "lucide-react";
+import { Loader2, ArrowLeft, Dumbbell, User, CheckCircle2, Copy } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -141,7 +141,15 @@ export function LoginPage() {
             </form>
           </Form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
+            <Link href="/forgot-password">
+              <span className="text-sm text-primary hover:underline cursor-pointer">
+                Esqueceu sua senha?
+              </span>
+            </Link>
+          </div>
+
+          <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground">
               Não tem uma conta?{" "}
               <Link href="/register">
@@ -346,6 +354,255 @@ export function RegisterPage() {
               </Link>
             </p>
           </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Email inválido"),
+});
+type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+
+export function ForgotPasswordPage() {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const form = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: "" },
+  });
+
+  const onSubmit = async (data: ForgotPasswordFormData) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+      if (result.resetToken) {
+        setResetToken(result.resetToken);
+      } else {
+        toast({ title: "Instruções enviadas", description: result.message });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCopy = () => {
+    if (resetToken) {
+      navigator.clipboard.writeText(resetToken);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="absolute top-4 left-4">
+        <Link href="/login">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+        </Link>
+      </div>
+      <Card className="w-full max-w-md bg-card border-border/50 fade-in">
+        <CardHeader className="text-center">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
+            <span className="text-primary-foreground font-bold text-xl">B</span>
+          </div>
+          <CardTitle className="text-2xl">Recuperar Senha</CardTitle>
+          <CardDescription>
+            Informe seu email para receber o token de recuperação
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {resetToken ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/30">
+                <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                <p className="text-sm text-primary font-medium">Token gerado com sucesso!</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Seu token de recuperação (válido por 1 hora):</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs bg-muted p-2 rounded break-all">{resetToken}</code>
+                  <Button size="sm" variant="outline" onClick={handleCopy}>
+                    {copied ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              <Link href={`/reset-password?token=${resetToken}`}>
+                <Button className="w-full neon-glow-hover">Redefinir senha agora</Button>
+              </Link>
+            </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email cadastrado</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="seu@email.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full neon-glow-hover" disabled={isLoading}>
+                  {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Gerando token...</> : "Gerar token de recuperação"}
+                </Button>
+              </form>
+            </Form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token é obrigatório"),
+  newPassword: z.string()
+    .min(6, "Senha deve ter pelo menos 6 caracteres")
+    .regex(/[A-Z]/, "Deve ter pelo menos uma letra maiúscula")
+    .regex(/[0-9]/, "Deve ter pelo menos um número"),
+  confirmPassword: z.string(),
+}).refine((d) => d.newPassword === d.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+});
+type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+
+export function ResetPasswordPage() {
+  const [, setLocation] = useLocation();
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const tokenFromUrl = params.get("token") ?? "";
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const form = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { token: tokenFromUrl, newPassword: "", confirmPassword: "" },
+  });
+
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: data.token, newPassword: data.newPassword }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+      setSuccess(true);
+      toast({ title: "Senha redefinida!", description: "Você já pode fazer login com a nova senha." });
+      setTimeout(() => setLocation("/login"), 2000);
+    } catch (error) {
+      toast({
+        title: "Erro ao redefinir senha",
+        description: error instanceof Error ? error.message : "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="absolute top-4 left-4">
+        <Link href="/forgot-password">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+        </Link>
+      </div>
+      <Card className="w-full max-w-md bg-card border-border/50 fade-in">
+        <CardHeader className="text-center">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
+            <span className="text-primary-foreground font-bold text-xl">B</span>
+          </div>
+          <CardTitle className="text-2xl">Redefinir Senha</CardTitle>
+          <CardDescription>
+            {success ? "Senha redefinida! Redirecionando..." : "Digite o token de recuperação e sua nova senha"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {success ? (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <CheckCircle2 className="w-16 h-16 text-primary" />
+              <p className="text-center text-muted-foreground">Sua senha foi alterada com sucesso.</p>
+            </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="token"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Token de recuperação</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Cole o token aqui" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nova senha</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Mín. 6 caracteres, 1 maiúscula, 1 número" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirmar nova senha</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Repita a nova senha" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full neon-glow-hover" disabled={isLoading}>
+                  {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Redefinindo...</> : "Redefinir senha"}
+                </Button>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
     </div>

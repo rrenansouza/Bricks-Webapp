@@ -213,6 +213,20 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async setPasswordResetToken(id: string, token: string | null, expiry: Date | null): Promise<void> {
+    await db.update(users).set({
+      passwordResetToken: token,
+      passwordResetExpiry: expiry,
+    }).where(eq(users.id, id));
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.passwordResetToken, token));
+    if (!user) return undefined;
+    if (!user.passwordResetExpiry || user.passwordResetExpiry < new Date()) return undefined;
+    return user;
+  }
+
   // Personal Profiles
   async createPersonalProfile(profile: InsertPersonalProfile): Promise<PersonalProfile> {
     const [newProfile] = await db.insert(personalProfiles).values(profile).returning();
