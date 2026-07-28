@@ -61,7 +61,7 @@ export default function PersonalDetailPage({ id }: PersonalDetailPageProps) {
   });
 
   const { data: personal, isLoading } = useQuery<PersonalWithDetails>({
-    queryKey: ["/api/personals", id, "details"],
+    queryKey: [`/api/personals/${id}/details`],
   });
 
   const quoteMutation = useMutation({
