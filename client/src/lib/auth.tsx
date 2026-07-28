@@ -45,7 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        // Merge profile into user object based on user type
+        const fullUser: AuthUser = { ...data.user };
+        if (data.profile) {
+          if (data.user.userType === "personal") {
+            fullUser.personalProfile = data.profile;
+          } else {
+            fullUser.student = data.profile;
+          }
+        }
+        setUser(fullUser);
         setToken(storedToken);
       } else {
         localStorage.removeItem("bricks_token");
@@ -82,7 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await response.json();
     localStorage.setItem("bricks_token", data.token);
     setToken(data.token);
-    setUser(data.user);
+    // Fetch the complete user+profile from /api/auth/me
+    await refreshUser();
   };
 
   const register = async (name: string, email: string, password: string, userType: "personal" | "student") => {
@@ -102,7 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await response.json();
     localStorage.setItem("bricks_token", data.token);
     setToken(data.token);
-    setUser(data.user);
+    // Fetch the complete user+profile from /api/auth/me
+    await refreshUser();
   };
 
   const logout = () => {

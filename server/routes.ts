@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import { randomBytes } from "crypto";
 import { storage } from "./storage";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -253,7 +254,7 @@ export async function registerRoutes(
         return res.json({ message: "Se este email estiver cadastrado, você receberá as instruções." });
       }
 
-      const token = require("crypto").randomBytes(32).toString("hex");
+      const token = randomBytes(32).toString("hex");
       const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
       await storage.setPasswordResetToken(user.id, token, expiry);
 
