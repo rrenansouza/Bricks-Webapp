@@ -1,0 +1,343 @@
+# Auditoria Funcional Completa do Projeto Bricks
+
+## Objetivo
+
+Quero que você realize uma auditoria funcional completa do projeto **Bricks**, analisando todas as funcionalidades implementadas até o momento.
+
+**Não faça nenhuma alteração no código nesta etapa.**
+
+Seu objetivo é atuar como um **QA Sênior**, **Product Owner**, **Analista de Sistemas** e **Usuário Final**, validando toda a experiência da aplicação.
+
+Quero um diagnóstico completo do sistema antes de continuarmos implementando novas funcionalidades.
+
+---
+
+# Escopo da Auditoria
+
+Analise absolutamente todas as páginas, componentes, menus, telas, botões, formulários, APIs, fluxos e funcionalidades existentes.
+
+Não presuma que uma funcionalidade está correta apenas porque existe visualmente. Valide seu comportamento de ponta a ponta.
+
+---
+
+# 1. Inventário das Funcionalidades
+
+Liste todas as funcionalidades existentes no sistema.
+
+Para cada uma informe:
+
+* Nome da funcionalidade
+* Tela onde está localizada
+* Objetivo
+* Status
+
+Utilize apenas uma das classificações abaixo:
+
+* ✅ Funciona corretamente
+* 🟡 Funciona parcialmente
+* 🔴 Não funciona
+* ⚪ Não implementada
+* 🔵 Implementada apenas visualmente (sem lógica)
+
+---
+
+# 2. Teste dos Fluxos
+
+Percorra todos os fluxos possíveis do sistema.
+
+Exemplos:
+
+* Cadastro de usuário
+* Login
+* Logout
+* Recuperação de senha
+* Edição de perfil
+* Cadastro de aluno
+* Cadastro de personal
+* Associação entre personal e aluno
+* Busca de alunos
+* Busca de personal trainers
+* Agenda
+* Criação de eventos
+* Agendamento de aulas
+* Aceite e recusa de aulas
+* Notificações
+* Feed
+* Publicações
+* Upload de imagens
+* Upload de vídeos
+* Configurações
+* Avaliações
+* Perfil público
+* Qualquer outra funcionalidade encontrada
+
+Para cada fluxo informe:
+
+* O que deveria acontecer
+* O que realmente acontece
+* O resultado esperado
+* O impacto para o usuário
+
+---
+
+# 3. Botões e Ações
+
+Verifique todos os elementos clicáveis do sistema.
+
+Para cada botão, link, ícone ou ação, informe:
+
+* Funciona corretamente
+* Não executa nenhuma ação
+* Executa ação incorreta
+* Gera erro
+* Está incompleto
+
+Inclua a localização exata de cada item.
+
+---
+
+# 4. Formulários
+
+Analise todos os formulários da aplicação.
+
+Verifique:
+
+* Campos obrigatórios
+* Validações
+* Mensagens de erro
+* Máscaras
+* Salvamento
+* Atualização
+* Exclusão
+* Cancelamento
+
+Informe todas as inconsistências encontradas.
+
+---
+
+# 5. Agenda
+
+Analise toda a funcionalidade da agenda.
+
+Verifique:
+
+* criação de eventos;
+* edição;
+* exclusão;
+* visualização;
+* conflitos de horário;
+* exibição no calendário;
+* sincronização dos dados;
+* atualização automática;
+* aparência visual.
+
+Compare a experiência com agendas modernas, como Google Calendar, Outlook ou Microsoft Teams.
+
+---
+
+# 6. Agendamento de Aulas
+
+Valide completamente o fluxo entre Personal Trainer e Aluno.
+
+Verifique:
+
+* criação da solicitação;
+* aprovação;
+* recusa;
+* cancelamento;
+* notificações;
+* atualização do status;
+* exibição na agenda;
+* persistência dos dados.
+
+Informe qualquer inconsistência.
+
+---
+
+# 7. Associação entre Perfis
+
+Verifique se a relação entre Personal Trainer e Aluno está funcionando corretamente.
+
+Confirme:
+
+* cadastro manual;
+* auto cadastro;
+* associação automática;
+* sincronização entre perfis;
+* acesso às funcionalidades dependentes desse vínculo.
+
+Caso exista qualquer falha, descreva exatamente onde ela ocorre.
+
+---
+
+# 8. Feed Social
+
+Analise o funcionamento do feed.
+
+Verifique:
+
+* criação de postagens;
+* upload de imagens;
+* upload de vídeos;
+* curtidas;
+* comentários;
+* compartilhamentos;
+* carregamento das publicações;
+* ordenação cronológica;
+* atualização em tempo real.
+
+---
+
+# 9. Perfis
+
+Analise os perfis de:
+
+* Personal Trainer
+* Aluno
+
+Informe:
+
+* informações ausentes;
+* campos incompletos;
+* inconsistências;
+* melhorias de experiência do usuário;
+* funcionalidades que ainda não estão conectadas.
+
+---
+
+# 10. Busca
+
+Teste todas as buscas existentes.
+
+Verifique:
+
+* busca por nome;
+* e-mail;
+* CPF;
+* filtros;
+* desempenho;
+* mensagens quando não houver resultados.
+
+---
+
+# 11. Experiência do Usuário (UX)
+
+Durante toda a auditoria, identifique:
+
+* fluxos confusos;
+* telas incompletas;
+* excesso de cliques;
+* informações duplicadas;
+* mensagens pouco claras;
+* elementos desalinhados;
+* navegação inconsistente;
+* problemas de usabilidade.
+
+Para cada item encontrado, sugira uma melhoria.
+
+---
+
+# 12. Funcionalidades Inacabadas
+
+Liste todas as funcionalidades que aparentam estar parcialmente implementadas.
+
+Informe:
+
+* o que já existe;
+* o que ainda falta;
+* o impacto dessa ausência.
+
+---
+
+# 13. Bugs Encontrados
+
+Crie uma lista contendo todos os bugs identificados.
+
+Para cada bug informe:
+
+* título;
+
+* tela;
+
+* passos para reproduzir;
+
+* resultado atual;
+
+* resultado esperado;
+
+* gravidade:
+
+* Crítico
+
+* Alto
+
+* Médio
+
+* Baixo
+
+---
+
+# 14. Melhorias Recomendadas
+
+Além dos bugs, identifique oportunidades de melhoria.
+
+Inclua sugestões relacionadas a:
+
+* UX;
+* funcionalidades;
+* organização das telas;
+* produtividade do usuário;
+* automações;
+* experiência geral.
+
+---
+
+# 15. Checklist Executivo
+
+Ao final da auditoria, gere uma tabela contendo:
+
+| Funcionalidade | Status | Gravidade | Prioridade | Observações |
+| -------------- | ------ | --------- | ---------- | ----------- |
+
+---
+
+# 16. Roadmap de Correções
+
+Monte um plano de ação dividido em:
+
+## P0 – Corrigir imediatamente
+
+Itens que impedem o funcionamento correto do sistema.
+
+---
+
+## P1 – Corrigir antes da publicação
+
+Problemas importantes que afetam a experiência do usuário.
+
+---
+
+## P2 – Melhorias recomendadas
+
+Aprimoramentos que aumentam qualidade e usabilidade.
+
+---
+
+## P3 – Evoluções futuras
+
+Funcionalidades que agregam valor, mas não são essenciais neste momento.
+
+---
+
+# Relatório Final
+
+Ao concluir a auditoria, apresente um resumo executivo contendo:
+
+* percentual estimado de funcionalidades concluídas;
+* percentual de funcionalidades parcialmente implementadas;
+* percentual de funcionalidades com falhas;
+* percentual de funcionalidades ausentes;
+* principais riscos antes de publicar o sistema;
+* recomendação sobre o nível de maturidade atual do Bricks (Protótipo, MVP, Beta, Release Candidate ou Produção).
+
+**Importante:** Não realize nenhuma alteração no código. O objetivo desta etapa é exclusivamente produzir um diagnóstico funcional completo e detalhado da aplicação.
