@@ -529,6 +529,90 @@ export type PersonalWithDetails = PersonalWithUser & {
   gallery?: PersonalGalleryItem[];
 };
 
+// In-app notifications table
+export const inAppNotifications = pgTable("in_app_notifications", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  type: text("type").notNull(),
+  referenceId: varchar("reference_id", { length: 36 }),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const inAppNotificationsRelations = relations(inAppNotifications, ({ one }) => ({
+  user: one(users, {
+    fields: [inAppNotifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export type InAppNotification = typeof inAppNotifications.$inferSelect;
+export type InsertInAppNotification = typeof inAppNotifications.$inferInsert;
+
+// =====================
+// SOCIAL FEED TABLES
+// =====================
+
+export const postTypeEnum = pgEnum("post_type", ["workout_check", "progress", "tip", "achievement", "general"]);
+export const mediaTypeEnum = pgEnum("media_type", ["image", "video"]);
+
+export const socialPosts = pgTable("social_posts", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  mediaUrl: text("media_url"),
+  mediaType: mediaTypeEnum("media_type"),
+  postType: postTypeEnum("post_type").default("general").notNull(),
+  likesCount: integer("likes_count").default(0).notNull(),
+  commentsCount: integer("comments_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const postLikes = pgTable("post_likes", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id", { length: 36 }).notNull().references(() => socialPosts.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const postComments = pgTable("post_comments", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id", { length: 36 }).notNull().references(() => socialPosts.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const socialPostsRelations = relations(socialPosts, ({ one, many }) => ({
+  user: one(users, { fields: [socialPosts.userId], references: [users.id] }),
+  likes: many(postLikes),
+  comments: many(postComments),
+}));
+
+export const postLikesRelations = relations(postLikes, ({ one }) => ({
+  post: one(socialPosts, { fields: [postLikes.postId], references: [socialPosts.id] }),
+  user: one(users, { fields: [postLikes.userId], references: [users.id] }),
+}));
+
+export const postCommentsRelations = relations(postComments, ({ one }) => ({
+  post: one(socialPosts, { fields: [postComments.postId], references: [socialPosts.id] }),
+  user: one(users, { fields: [postComments.userId], references: [users.id] }),
+}));
+
+export type SocialPost = typeof socialPosts.$inferSelect;
+export type InsertSocialPost = typeof socialPosts.$inferInsert;
+export type PostLike = typeof postLikes.$inferSelect;
+export type PostComment = typeof postComments.$inferSelect;
+export type InsertPostComment = typeof postComments.$inferInsert;
+
+export type SocialPostWithUser = SocialPost & {
+  user: { id: string; name: string; photoUrl: string | null; userType: string };
+  userLiked?: boolean;
+  recentComments?: (PostComment & { user: { name: string; photoUrl: string | null } })[];
+};
+
 // Notification types (for mock services)
 export interface BricksNotification {
   id: string;

@@ -18,6 +18,10 @@ import {
   personalExperience,
   personalEvents,
   financialRecords,
+  inAppNotifications,
+  socialPosts,
+  postLikes,
+  postComments,
   type User,
   type InsertUser,
   type PersonalProfile,
@@ -54,6 +58,14 @@ import {
   type PersonalWithDetails,
   type StudentWithUser,
   type WorkoutWithExercises,
+  type InAppNotification,
+  type InsertInAppNotification,
+  type SocialPost,
+  type InsertSocialPost,
+  type PostLike,
+  type PostComment,
+  type InsertPostComment,
+  type SocialPostWithUser,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -168,6 +180,27 @@ export interface IStorage {
   approveStudent(id: string): Promise<Student | undefined>;
   rejectStudent(id: string): Promise<Student | undefined>;
   deleteStudent(id: string): Promise<boolean>;
+
+  // In-App Notifications
+  createNotification(data: InsertInAppNotification): Promise<InAppNotification>;
+  getNotificationsByUserId(userId: string): Promise<InAppNotification[]>;
+  markNotificationRead(id: string): Promise<void>;
+  markAllNotificationsRead(userId: string): Promise<void>;
+  getUnreadNotificationCount(userId: string): Promise<number>;
+
+  // User search
+  searchUsers(query: string): Promise<{ id: string; name: string; email: string; userType: string; photoUrl: string | null }[]>;
+  getStudentByUserId(userId: string): Promise<Student | undefined>;
+
+  // Social Feed
+  createPost(data: InsertSocialPost): Promise<SocialPost>;
+  getFeedPosts(userId: string, limit?: number, offset?: number): Promise<SocialPostWithUser[]>;
+  getPostById(id: string): Promise<SocialPostWithUser | undefined>;
+  deletePost(id: string): Promise<boolean>;
+  likePost(postId: string, userId: string): Promise<void>;
+  unlikePost(postId: string, userId: string): Promise<void>;
+  createComment(data: InsertPostComment): Promise<PostComment>;
+  getCommentsByPostId(postId: string): Promise<(PostComment & { user: { name: string; photoUrl: string | null } })[]>;
 
   // Dashboard Stats
   getDashboardStats(personalId: string): Promise<{
@@ -826,6 +859,143 @@ export class DatabaseStorage implements IStorage {
   async deleteStudent(id: string): Promise<boolean> {
     const result = await db.delete(students).where(eq(students.id, id)).returning();
     return result.length > 0;
+  }
+
+  // In-App Notifications
+  async createNotification(data: InsertInAppNotification): Promise<InAppNotification> {
+    const [notif] = await db.insert(inAppNotifications).values(data).returning();
+    return notif;
+  }
+
+  async getNotificationsByUserId(userId: string): Promise<InAppNotification[]> {
+    return db.select().from(inAppNotifications)
+      .where(eq(inAppNotifications.userId, userId))
+      .orderBy(desc(inAppNotifications.createdAt));
+  }
+
+  async markNotificationRead(id: string): Promise<void> {
+    await db.update(inAppNotifications)
+      .set({ isRead: true })
+      .where(eq(inAppNotifications.id, id));
+  }
+
+  async markAllNotificationsRead(userId: string): Promise<void> {
+    await db.update(inAppNotifications)
+      .set({ isRead: true })
+      .where(eq(inAppNotifications.userId, userId));
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const result = await db.select().from(inAppNotifications)
+      .where(and(eq(inAppNotifications.userId, userId), eq(inAppNotifications.isRead, false)));
+    return result.length;
+  }
+
+  // User search
+  async searchUsers(query: string): Promise<{ id: string; name: string; email: string; userType: string; photoUrl: string | null }[]> {
+    return db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      userType: users.userType,
+      photoUrl: users.photoUrl,
+    }).from(users)
+    .where(or(
+      ilike(users.name, `%${query}%`),
+      ilike(users.email, `%${query}%`),
+    ))
+    .limit(20);
+  }
+
+  async getStudentByUserId(userId: string): Promise<Student | undefined> {
+    const [student] = await db.select().from(students).where(eq(students.userId, userId));
+    return student;
+  }
+
+  // Social Feed
+  async createPost(data: InsertSocialPost): Promise<SocialPost> {
+    const [post] = await db.insert(socialPosts).values(data).returning();
+    return post;
+  }
+
+  async getFeedPosts(userId: string, limit = 20, offset = 0): Promise<SocialPostWithUser[]> {
+    const rows = await db
+      .select({
+        post: socialPosts,
+        user: { id: users.id, name: users.name, photoUrl: users.photoUrl, userType: users.userType },
+      })
+      .from(socialPosts)
+      .innerJoin(users, eq(socialPosts.userId, users.id))
+      .orderBy(desc(socialPosts.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const postIds = rows.map((r) => r.post.id);
+    const liked = postIds.length
+      ? await db.select().from(postLikes).where(and(eq(postLikes.userId, userId)))
+      : [];
+    const likedSet = new Set(liked.map((l) => l.postId));
+
+    return rows.map((r) => ({
+      ...r.post,
+      user: r.user,
+      userLiked: likedSet.has(r.post.id),
+    }));
+  }
+
+  async getPostById(id: string): Promise<SocialPostWithUser | undefined> {
+    const [row] = await db
+      .select({
+        post: socialPosts,
+        user: { id: users.id, name: users.name, photoUrl: users.photoUrl, userType: users.userType },
+      })
+      .from(socialPosts)
+      .innerJoin(users, eq(socialPosts.userId, users.id))
+      .where(eq(socialPosts.id, id));
+    if (!row) return undefined;
+    return { ...row.post, user: row.user };
+  }
+
+  async deletePost(id: string): Promise<boolean> {
+    const result = await db.delete(socialPosts).where(eq(socialPosts.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async likePost(postId: string, userId: string): Promise<void> {
+    const existing = await db.select().from(postLikes)
+      .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
+    if (!existing.length) {
+      await db.insert(postLikes).values({ postId, userId });
+      await db.update(socialPosts).set({ likesCount: sql`${socialPosts.likesCount} + 1` }).where(eq(socialPosts.id, postId));
+    }
+  }
+
+  async unlikePost(postId: string, userId: string): Promise<void> {
+    const deleted = await db.delete(postLikes)
+      .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)))
+      .returning();
+    if (deleted.length > 0) {
+      await db.update(socialPosts).set({ likesCount: sql`GREATEST(0, ${socialPosts.likesCount} - 1)` }).where(eq(socialPosts.id, postId));
+    }
+  }
+
+  async createComment(data: InsertPostComment): Promise<PostComment> {
+    const [comment] = await db.insert(postComments).values(data).returning();
+    await db.update(socialPosts).set({ commentsCount: sql`${socialPosts.commentsCount} + 1` }).where(eq(socialPosts.id, data.postId));
+    return comment;
+  }
+
+  async getCommentsByPostId(postId: string): Promise<(PostComment & { user: { name: string; photoUrl: string | null } })[]> {
+    const rows = await db
+      .select({
+        comment: postComments,
+        user: { name: users.name, photoUrl: users.photoUrl },
+      })
+      .from(postComments)
+      .innerJoin(users, eq(postComments.userId, users.id))
+      .where(eq(postComments.postId, postId))
+      .orderBy(postComments.createdAt);
+    return rows.map((r) => ({ ...r.comment, user: r.user }));
   }
 
   // Dashboard Stats

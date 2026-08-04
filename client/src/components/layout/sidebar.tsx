@@ -1,10 +1,12 @@
 import { Link, useLocation } from "wouter";
-import { Home, Dumbbell, Calendar, User, Search, Users, LogOut, Settings, Bell, CalendarDays, ShoppingCart } from "lucide-react";
+import { Home, Dumbbell, Calendar, User, Search, Users, LogOut, Settings, Bell, CalendarDays, ShoppingCart, Rss } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 interface NavItem {
   href: string;
@@ -18,12 +20,19 @@ export function DesktopSidebar() {
 
   const isPersonal = user?.userType === "personal";
 
+  const { data: notifData } = useQuery<{ unreadCount: number }>({
+    queryKey: ["/api/notifications/inbox"],
+    refetchInterval: 30000,
+  });
+  const unreadCount = notifData?.unreadCount || 0;
+
   const mainNavItems: NavItem[] = isPersonal
     ? [
         { href: "/dashboard", icon: Home, label: "Dashboard" },
         { href: "/workouts", icon: Dumbbell, label: "Treinos" },
         { href: "/students", icon: Users, label: "Alunos" },
         { href: "/schedule", icon: Calendar, label: "Agenda" },
+        { href: "/feed", icon: Rss, label: "Feed" },
         { href: "/notifications", icon: Bell, label: "Notificações" },
         { href: "/events", icon: CalendarDays, label: "Eventos" },
         { href: "/store", icon: ShoppingCart, label: "Loja" },
@@ -32,6 +41,7 @@ export function DesktopSidebar() {
         { href: "/dashboard", icon: Home, label: "Dashboard" },
         { href: "/my-workouts", icon: Dumbbell, label: "Meus Treinos" },
         { href: "/schedule", icon: Calendar, label: "Agenda" },
+        { href: "/feed", icon: Rss, label: "Feed" },
         { href: "/personals", icon: Search, label: "Buscar Personais" },
       ];
 
@@ -76,10 +86,17 @@ export function DesktopSidebar() {
                   )}
                   data-testid={`sidebar-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
-                  <Icon
-                    className={cn("w-5 h-5", isActive && "text-primary")}
-                    strokeWidth={isActive ? 2.5 : 2}
-                  />
+                  <div className="relative">
+                    <Icon
+                      className={cn("w-5 h-5", isActive && "text-primary")}
+                      strokeWidth={isActive ? 2.5 : 2}
+                    />
+                    {item.href === "/notifications" && unreadCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </div>
                   <span>{item.label}</span>
                 </button>
               </Link>

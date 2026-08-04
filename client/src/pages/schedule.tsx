@@ -170,6 +170,11 @@ export default function SchedulePage() {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [activeView, setActiveView] = useState<"week" | "day">("week");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ date: Date; hour: string } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<
+    | { type: "appointment"; data: Appointment }
+    | { type: "event"; data: PersonalEvent }
+    | null
+  >(null);
 
   const isPersonal = user?.userType === "personal";
 
@@ -239,7 +244,7 @@ export default function SchedulePage() {
         location: data.location,
         travelTime: data.travelTime,
         notes: data.notes,
-        status: "confirmed",
+        status: "pending",
       });
     },
     onSuccess: () => {
@@ -405,7 +410,7 @@ export default function SchedulePage() {
   const getEventsForTimeSlot = (day: Date, hour: string) => {
     const [h, m] = hour.split(":").map(Number);
     const slotStart = setMinutes(setHours(day, h), m);
-    const slotEnd = setMinutes(setHours(day, h), m + 30);
+    const slotEnd = addHours(slotStart, 1);
 
     const matchingAppointments = (appointments || []).filter(apt => {
       const aptStart = new Date(apt.startTime);
@@ -432,7 +437,7 @@ export default function SchedulePage() {
     const start = new Date(startTime);
     const end = new Date(endTime);
     const minutes = differenceInMinutes(end, start);
-    return Math.max(28, (minutes / 30) * 28);
+    return Math.max(32, (minutes / 30) * 32);
   };
 
   const slotsForSelectedDate = slots?.filter((slot) =>
@@ -991,7 +996,7 @@ export default function SchedulePage() {
                             return (
                               <div 
                                 key={dayIndex} 
-                                className={`p-1 min-h-[56px] border-r border-border/30 last:border-r-0 relative ${isToday ? "bg-primary/5" : ""} hover:bg-muted/30 cursor-pointer transition-colors`}
+                                className={`p-1 min-h-[64px] border-r border-border/30 last:border-r-0 relative ${isToday ? "bg-primary/5" : ""} hover:bg-muted/30 cursor-pointer transition-colors`}
                                 onClick={() => {
                                   if (!hasItems && isPersonal) {
                                     openAppointmentDialog(day, hour);
@@ -1004,24 +1009,30 @@ export default function SchedulePage() {
                                   const isStart = format(aptStart, "HH:mm") === hour;
                                   if (!isStart) return null;
                                   
+                                  const isPending = apt.status === "pending";
                                   return (
                                     <div
                                       key={apt.id}
-                                      className="absolute left-1 right-1 rounded-md px-2 py-1 text-xs overflow-hidden z-[1]"
+                                      className="absolute left-1 right-1 rounded-md px-2 py-1 text-xs overflow-hidden z-[1] cursor-pointer hover:opacity-90 transition-opacity"
                                       style={{
-                                        backgroundColor: "hsl(75, 100%, 50%)",
+                                        backgroundColor: isPending ? "hsl(35, 100%, 55%)" : "hsl(75, 100%, 50%)",
                                         color: "hsl(173, 100%, 8%)",
                                         height: `${calculateEventHeight(apt.startTime, apt.endTime)}px`,
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedItem({ type: "appointment", data: apt });
                                       }}
                                       data-testid={`appointment-${apt.id}`}
                                     >
                                       <div className="font-medium truncate flex items-center gap-1">
                                         <User className="w-3 h-3 flex-shrink-0" />
-                                        {apt.student?.user?.name || "Aluno"}
+                                        {isPersonal ? (apt.student?.user?.name || "Aluno") : (apt.personal?.user?.name || "Personal")}
                                       </div>
                                       <div className="text-[10px] opacity-80">
                                         {format(new Date(apt.startTime), "HH:mm")} - {format(new Date(apt.endTime), "HH:mm")}
                                       </div>
+                                      {isPending && <div className="text-[10px] font-semibold opacity-90">Pendente</div>}
                                     </div>
                                   );
                                 })}
@@ -1034,28 +1045,21 @@ export default function SchedulePage() {
                                   return (
                                     <div
                                       key={evt.id}
-                                      className="absolute left-1 right-1 rounded-md px-2 py-1 text-xs overflow-hidden z-[1] group"
+                                      className="absolute left-1 right-1 rounded-md px-2 py-1 text-xs overflow-hidden z-[1] cursor-pointer hover:opacity-90 transition-opacity"
                                       style={{
                                         backgroundColor: evt.color || "#00b8d4",
                                         color: "white",
                                         height: `${calculateEventHeight(evt.startTime, evt.endTime)}px`,
                                       }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedItem({ type: "event", data: evt });
+                                      }}
                                       data-testid={`event-${evt.id}`}
                                     >
-                                      <div className="font-medium truncate flex items-center justify-between gap-1">
-                                        <span className="flex items-center gap-1">
-                                          <CalendarIcon className="w-3 h-3 flex-shrink-0" />
-                                          {evt.name}
-                                        </span>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            deleteEventMutation.mutate(evt.id);
-                                          }}
-                                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                          <X className="w-3 h-3" />
-                                        </button>
+                                      <div className="font-medium truncate flex items-center gap-1">
+                                        <CalendarIcon className="w-3 h-3 flex-shrink-0" />
+                                        {evt.name}
                                       </div>
                                       <div className="text-[10px] opacity-80">
                                         {format(new Date(evt.startTime), "HH:mm")} - {format(new Date(evt.endTime), "HH:mm")}
@@ -1291,6 +1295,148 @@ export default function SchedulePage() {
           </TabsContent>
         </Tabs>
       </div>
+      {/* Details Dialog */}
+      <Dialog open={!!selectedItem} onOpenChange={(o) => !o && setSelectedItem(null)}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedItem?.type === "appointment" ? "Detalhes do Agendamento" : "Detalhes do Evento"}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedItem?.type === "appointment" && (() => {
+            const apt = selectedItem.data as Appointment;
+            const isPending = apt.status === "pending";
+            const canAccept = isPending; // both sides can accept their incoming requests
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">
+                      {isPersonal ? (apt.student?.user?.name || "Aluno") : (apt.personal?.user?.name || "Personal")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {isPersonal ? "Aluno" : "Personal Trainer"}
+                    </p>
+                  </div>
+                  <div className="ml-auto">{getStatusBadge(apt.status)}</div>
+                </div>
+
+                <div className="rounded-lg bg-muted/50 p-3 space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                    <span>{format(new Date(apt.startTime), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <span>{format(new Date(apt.startTime), "HH:mm")} – {format(new Date(apt.endTime), "HH:mm")}</span>
+                  </div>
+                  {apt.location && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <span>{apt.location}</span>
+                    </div>
+                  )}
+                </div>
+
+                {apt.notes && (
+                  <p className="text-sm text-muted-foreground border-l-2 border-primary/40 pl-3">{apt.notes}</p>
+                )}
+
+                {canAccept && (
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                      onClick={() => {
+                        updateAppointmentMutation.mutate({ id: apt.id, status: "confirmed" });
+                        setSelectedItem(null);
+                      }}
+                    >
+                      <Check className="w-4 h-4 mr-2" /> Aceitar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={() => {
+                        updateAppointmentMutation.mutate({ id: apt.id, status: "cancelled" });
+                        setSelectedItem(null);
+                      }}
+                    >
+                      <X className="w-4 h-4 mr-2" /> Recusar
+                    </Button>
+                  </div>
+                )}
+                {apt.status === "confirmed" && (
+                  <Button
+                    variant="outline"
+                    className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => {
+                      updateAppointmentMutation.mutate({ id: apt.id, status: "cancelled" });
+                      setSelectedItem(null);
+                    }}
+                  >
+                    <X className="w-4 h-4 mr-2" /> Cancelar Aula
+                  </Button>
+                )}
+              </div>
+            );
+          })()}
+
+          {selectedItem?.type === "event" && (() => {
+            const evt = selectedItem.data as PersonalEvent;
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: evt.color || "#00b8d4" }}
+                  >
+                    <CalendarIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{evt.name}</p>
+                    <p className="text-sm text-muted-foreground">Evento pessoal</p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-muted/50 p-3 space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                    <span>{format(new Date(evt.startTime), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <span>{format(new Date(evt.startTime), "HH:mm")} – {format(new Date(evt.endTime), "HH:mm")}</span>
+                  </div>
+                  {evt.location && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <span>{evt.location}</span>
+                    </div>
+                  )}
+                </div>
+
+                {evt.notes && (
+                  <p className="text-sm text-muted-foreground border-l-2 border-primary/40 pl-3">{evt.notes}</p>
+                )}
+
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => {
+                    deleteEventMutation.mutate(evt.id);
+                    setSelectedItem(null);
+                  }}
+                >
+                  <X className="w-4 h-4 mr-2" /> Excluir Evento
+                </Button>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

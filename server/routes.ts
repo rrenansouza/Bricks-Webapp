@@ -848,8 +848,11 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Perfil não encontrado" });
       }
 
+      const body = { ...req.body };
+      if (body.startTime) body.startTime = new Date(body.startTime);
+      if (body.endTime) body.endTime = new Date(body.endTime);
       const validatedData = insertAvailabilitySlotSchema.parse({
-        ...req.body,
+        ...body,
         personalId: profile.id,
       });
 
@@ -883,48 +886,117 @@ export async function registerRoutes(
   // APPOINTMENTS ROUTES
   // =====================
 
-  // Get appointments
+  // Get appointments (with nested student/personal user data)
   app.get("/api/appointments", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
+      let rawAppointments;
+
       if (req.user!.userType === "personal") {
         const profile = await storage.getPersonalByUserId(req.user!.id);
         if (!profile) {
           return res.status(404).json({ message: "Perfil não encontrado" });
         }
-        const appointments = await storage.getAppointmentsByPersonalId(profile.id);
-        res.json(appointments);
+        rawAppointments = await storage.getAppointmentsByPersonalId(profile.id);
       } else {
         const student = await storage.getStudentByUserId(req.user!.id);
         if (!student) {
           return res.status(404).json({ message: "Perfil não encontrado" });
         }
-        const appointments = await storage.getAppointmentsByStudentId(student.id);
-        res.json(appointments);
+        rawAppointments = await storage.getAppointmentsByStudentId(student.id);
       }
+
+      // Enrich with nested student/personal user data
+      const enriched = await Promise.all(rawAppointments.map(async (apt) => {
+        try {
+          const [studentData, personalData] = await Promise.all([
+            storage.getStudentById(apt.studentId),
+            storage.getPersonalById(apt.personalId),
+          ]);
+          return { ...apt, student: studentData, personal: personalData };
+        } catch {
+          return { ...apt, student: null, personal: null };
+        }
+      }));
+
+      res.json(enriched);
     } catch (error) {
       console.error("Get appointments error:", error);
       res.status(500).json({ message: "Erro ao buscar agendamentos" });
     }
   });
 
-  // Create appointment (student books with personal)
+  // Create appointment (both student and personal can create)
   app.post("/api/appointments", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-      if (req.user!.userType !== "student") {
-        return res.status(403).json({ message: "Apenas alunos podem agendar" });
-      }
+      let studentId: string;
+      let personalId: string;
 
-      const student = await storage.getStudentByUserId(req.user!.id);
-      if (!student) {
-        return res.status(404).json({ message: "Perfil não encontrado" });
+      if (req.user!.userType === "personal") {
+        // Personal creating appointment for their student
+        const profile = await storage.getPersonalByUserId(req.user!.id);
+        if (!profile) {
+          return res.status(404).json({ message: "Perfil não encontrado" });
+        }
+        personalId = profile.id;
+        studentId = req.body.studentId;
+        if (!studentId) {
+          return res.status(400).json({ message: "studentId é obrigatório" });
+        }
+        // Verify student belongs to this personal
+        const studentCheck = await storage.getStudentById(studentId);
+        if (!studentCheck || studentCheck.personalId !== personalId) {
+          return res.status(403).json({ message: "Aluno não pertence a este personal" });
+        }
+      } else {
+        // Student creating appointment with their personal
+        const student = await storage.getStudentByUserId(req.user!.id);
+        if (!student) {
+          return res.status(404).json({ message: "Perfil não encontrado" });
+        }
+        studentId = student.id;
+        personalId = req.body.personalId || student.personalId;
+        if (!personalId) {
+          return res.status(400).json({ message: "Personal não informado" });
+        }
       }
 
       const validatedData = insertAppointmentSchema.parse({
         ...req.body,
-        studentId: student.id,
+        studentId,
+        personalId,
+        status: "pending",
       });
 
       const appointment = await storage.createAppointment(validatedData);
+
+      // Send in-app notification to the other party
+      try {
+        const [studentData, personalData] = await Promise.all([
+          storage.getStudentById(studentId),
+          storage.getPersonalById(personalId),
+        ]);
+
+        if (req.user!.userType === "personal" && studentData) {
+          await storage.createNotification({
+            userId: studentData.user.id,
+            title: "Nova aula agendada",
+            body: `${personalData?.user.name || "Seu personal"} agendou uma aula com você`,
+            type: "appointment_request",
+            referenceId: appointment.id,
+          });
+        } else if (req.user!.userType === "student" && personalData) {
+          await storage.createNotification({
+            userId: personalData.user.id,
+            title: "Solicitação de aula",
+            body: `${studentData?.user.name || "Um aluno"} solicitou uma aula`,
+            type: "appointment_request",
+            referenceId: appointment.id,
+          });
+        }
+      } catch (notifErr) {
+        console.error("Notification error (non-fatal):", notifErr);
+      }
+
       res.status(201).json(appointment);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -935,7 +1007,7 @@ export async function registerRoutes(
     }
   });
 
-  // Update appointment status
+  // Update appointment status (with notification to other party)
   app.patch("/api/appointments/:id/status", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
       const { status } = req.body;
@@ -950,10 +1022,85 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Agendamento não encontrado" });
       }
 
+      // Notify the other party about the status change
+      try {
+        const [studentData, personalData] = await Promise.all([
+          storage.getStudentById(updated.studentId),
+          storage.getPersonalById(updated.personalId),
+        ]);
+
+        const statusMessages: Record<string, string> = {
+          confirmed: "confirmou",
+          cancelled: "cancelou",
+          completed: "concluiu",
+        };
+        const verb = statusMessages[status];
+
+        if (verb) {
+          if (req.user!.userType === "personal" && studentData) {
+            await storage.createNotification({
+              userId: studentData.user.id,
+              title: `Aula ${status === "confirmed" ? "confirmada" : status === "cancelled" ? "cancelada" : "concluída"}`,
+              body: `${personalData?.user.name || "Seu personal"} ${verb} a aula`,
+              type: `appointment_${status}`,
+              referenceId: updated.id,
+            });
+          } else if (req.user!.userType === "student" && personalData) {
+            await storage.createNotification({
+              userId: personalData.user.id,
+              title: `Aula ${status === "confirmed" ? "confirmada" : status === "cancelled" ? "cancelada" : "concluída"}`,
+              body: `${studentData?.user.name || "Um aluno"} ${verb} a aula`,
+              type: `appointment_${status}`,
+              referenceId: updated.id,
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.error("Notification error (non-fatal):", notifErr);
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Update appointment status error:", error);
       res.status(500).json({ message: "Erro ao atualizar status" });
+    }
+  });
+
+  // =====================
+  // NOTIFICATIONS ROUTES
+  // =====================
+
+  // Get notifications for logged-in user
+  app.get("/api/notifications/inbox", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const notifs = await storage.getNotificationsByUserId(req.user!.id);
+      const unreadCount = notifs.filter(n => !n.isRead).length;
+      res.json({ notifications: notifs, unreadCount });
+    } catch (error) {
+      console.error("Get notifications error:", error);
+      res.status(500).json({ message: "Erro ao buscar notificações" });
+    }
+  });
+
+  // Mark single notification as read
+  app.patch("/api/notifications/inbox/:id/read", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      await storage.markNotificationRead(req.params.id);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Mark notification read error:", error);
+      res.status(500).json({ message: "Erro ao marcar notificação" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.patch("/api/notifications/inbox/read-all", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      await storage.markAllNotificationsRead(req.user!.id);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Mark all notifications read error:", error);
+      res.status(500).json({ message: "Erro ao marcar notificações" });
     }
   });
 
@@ -1235,6 +1382,21 @@ export async function registerRoutes(
     }
   });
 
+  // Validate student registration token (public)
+  app.get("/api/students/validate-token/:token", async (req: Request, res: Response) => {
+    try {
+      const student = await storage.getStudentByRegistrationToken(req.params.token);
+      if (!student) {
+        return res.json({ valid: false });
+      }
+      const personal = student.personalId ? await storage.getPersonalById(student.personalId) : null;
+      res.json({ valid: true, personalName: personal?.user.name || "Seu personal" });
+    } catch (error) {
+      console.error("Validate token error:", error);
+      res.status(500).json({ message: "Erro ao validar token" });
+    }
+  });
+
   // Approve student
   app.patch("/api/students/:id/approve", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
@@ -1330,8 +1492,11 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Perfil não encontrado" });
       }
 
+      const body = { ...req.body };
+      if (body.startTime) body.startTime = new Date(body.startTime);
+      if (body.endTime) body.endTime = new Date(body.endTime);
       const validatedData = insertPersonalEventSchema.parse({
-        ...req.body,
+        ...body,
         personalId: profile.id,
       });
 
@@ -1518,6 +1683,198 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Get dashboard stats error:", error);
       res.status(500).json({ message: "Erro ao buscar estatísticas" });
+    }
+  });
+
+  // =====================
+  // SOCIAL FEED ROUTES
+  // =====================
+
+  // Get feed posts
+  app.get("/api/feed", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const posts = await storage.getFeedPosts(req.user!.id, limit, offset);
+      res.json(posts);
+    } catch (error) {
+      console.error("Get feed error:", error);
+      res.status(500).json({ message: "Erro ao buscar feed" });
+    }
+  });
+
+  // Create post
+  app.post("/api/feed", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const { content, mediaUrl, mediaType, postType } = req.body;
+      if (!content?.trim()) {
+        return res.status(400).json({ message: "Conteúdo obrigatório" });
+      }
+      const post = await storage.createPost({
+        userId: req.user!.id,
+        content: content.trim(),
+        mediaUrl: mediaUrl || null,
+        mediaType: mediaType || null,
+        postType: postType || "general",
+      });
+      const full = await storage.getPostById(post.id);
+      res.status(201).json(full);
+    } catch (error) {
+      console.error("Create post error:", error);
+      res.status(500).json({ message: "Erro ao criar publicação" });
+    }
+  });
+
+  // Delete post
+  app.delete("/api/feed/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const post = await storage.getPostById(req.params.id);
+      if (!post) return res.status(404).json({ message: "Publicação não encontrada" });
+      if (post.userId !== req.user!.id) return res.status(403).json({ message: "Sem permissão" });
+      await storage.deletePost(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao excluir publicação" });
+    }
+  });
+
+  // Like / unlike post
+  app.post("/api/feed/:id/like", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      await storage.likePost(req.params.id, req.user!.id);
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao curtir publicação" });
+    }
+  });
+
+  app.delete("/api/feed/:id/like", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      await storage.unlikePost(req.params.id, req.user!.id);
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao descurtir publicação" });
+    }
+  });
+
+  // Get comments
+  app.get("/api/feed/:id/comments", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const comments = await storage.getCommentsByPostId(req.params.id);
+      res.json(comments);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar comentários" });
+    }
+  });
+
+  // Create comment
+  app.post("/api/feed/:id/comments", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const { content } = req.body;
+      if (!content?.trim()) return res.status(400).json({ message: "Comentário obrigatório" });
+      const comment = await storage.createComment({
+        postId: req.params.id,
+        userId: req.user!.id,
+        content: content.trim(),
+      });
+      res.status(201).json(comment);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao comentar" });
+    }
+  });
+
+  // =====================
+  // PUBLIC USER / STUDENT PROFILE
+  // =====================
+
+  // Get a user's student profile (public info)
+  app.get("/api/users/:userId/student-profile", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const targetUser = await storage.getUserById(req.params.userId);
+      if (!targetUser) return res.status(404).json({ message: "Usuário não encontrado" });
+
+      const student = await storage.getStudentByUserId(req.params.userId);
+      res.json({
+        id: student?.id || null,
+        userId: targetUser.id,
+        personalId: student?.personalId || null,
+        age: student?.age || null,
+        phone: student?.phone || null,
+        cpf: null, // never expose CPF publicly
+        gender: student?.gender || null,
+        birthDate: student?.birthDate || null,
+        city: (student as any)?.city || null,
+        goals: student?.goals || null,
+        notes: req.user!.userType === "personal" ? (student?.notes || null) : null,
+        registrationStatus: student?.registrationStatus || null,
+        user: {
+          id: targetUser.id,
+          name: targetUser.name,
+          email: targetUser.email,
+          photoUrl: targetUser.photoUrl,
+          userType: targetUser.userType,
+        },
+      });
+    } catch (error) {
+      console.error("Get student profile error:", error);
+      res.status(500).json({ message: "Erro ao buscar perfil" });
+    }
+  });
+
+  // =====================
+  // CONNECT STUDENT ROUTE
+  // =====================
+
+  // Personal connects an existing user as their student
+  app.post("/api/students/connect/:userId", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) return res.status(404).json({ message: "Perfil não encontrado" });
+
+      // Check user exists
+      const targetUser = await storage.getUserById(req.params.userId);
+      if (!targetUser) return res.status(404).json({ message: "Usuário não encontrado" });
+      if (targetUser.userType !== "student") return res.status(400).json({ message: "Usuário não é aluno" });
+
+      // Check if student profile exists
+      const existing = await storage.getStudentByUserId(req.params.userId);
+      if (existing) {
+        if (existing.personalId === profile.id) {
+          return res.status(400).json({ message: "Aluno já vinculado a este personal" });
+        }
+        // Update existing student record to link this personal
+        const updated = await storage.updateStudent(existing.id, { personalId: profile.id });
+        return res.json(updated);
+      }
+
+      // Create new student record linked to this personal
+      const student = await storage.createStudent({
+        userId: req.params.userId,
+        personalId: profile.id,
+        registrationStatus: "approved",
+      });
+      res.status(201).json(student);
+    } catch (error) {
+      console.error("Connect student error:", error);
+      res.status(500).json({ message: "Erro ao conectar aluno" });
+    }
+  });
+
+  // Search all users (for student search by name/email/CPF)
+  app.get("/api/users/search", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+      const q = (req.query.q as string)?.trim();
+      if (!q || q.length < 2) return res.json([]);
+      const results = await storage.searchUsers(q);
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar usuários" });
     }
   });
 

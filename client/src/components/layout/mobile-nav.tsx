@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Dumbbell, Calendar, User, Search } from "lucide-react";
+import { Home, Dumbbell, Calendar, User, Search, Rss } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 
@@ -20,13 +20,14 @@ export function MobileNav() {
         { href: "/dashboard", icon: Home, label: "Home" },
         { href: "/workouts", icon: Dumbbell, label: "Treinos" },
         { href: "/schedule", icon: Calendar, label: "Agenda" },
+        { href: "/feed", icon: Rss, label: "Feed" },
         { href: "/profile", icon: User, label: "Perfil" },
       ]
     : [
         { href: "/dashboard", icon: Home, label: "Home" },
         { href: "/my-workouts", icon: Dumbbell, label: "Treinos" },
         { href: "/schedule", icon: Calendar, label: "Agenda" },
-        { href: "/personals", icon: Search, label: "Buscar" },
+        { href: "/feed", icon: Rss, label: "Feed" },
         { href: "/profile", icon: User, label: "Perfil" },
       ];
 

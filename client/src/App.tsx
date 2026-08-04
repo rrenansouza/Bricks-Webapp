@@ -20,6 +20,9 @@ import SettingsPage from "@/pages/settings";
 import NotificationsPage from "@/pages/notifications";
 import EventsPage from "@/pages/events";
 import StorePage from "@/pages/store";
+import StudentSelfRegisterPage from "@/pages/student-self-register";
+import FeedPage from "@/pages/feed";
+import StudentDetailPage from "@/pages/student-detail";
 import { Loader2 } from "lucide-react";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -151,6 +154,24 @@ function Router() {
         <ProtectedRoute>
           <StorePage />
         </ProtectedRoute>
+      </Route>
+
+      <Route path="/feed">
+        <ProtectedRoute>
+          <FeedPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/students/profile/:userId">
+        {(params) => (
+          <ProtectedRoute>
+            <StudentDetailPage userId={params.userId} />
+          </ProtectedRoute>
+        )}
+      </Route>
+
+      <Route path="/register/student/:token">
+        {(params) => <StudentSelfRegisterPage token={params.token} />}
       </Route>
       
       <Route component={NotFound} />

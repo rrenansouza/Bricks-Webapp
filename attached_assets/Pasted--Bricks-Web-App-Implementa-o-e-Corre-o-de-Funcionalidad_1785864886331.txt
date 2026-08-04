@@ -1,0 +1,351 @@
+# Bricks Web App – Implementação e Correção de Funcionalidades
+
+## Objetivo Geral
+
+Realizar a correção das funcionalidades existentes e implementar novas funcionalidades no sistema **Bricks**, garantindo integração entre os perfis de Personal Trainer e Aluno, funcionamento correto dos agendamentos, melhoria da experiência do usuário (UX/UI) e criação de recursos sociais para aumentar o engajamento da plataforma.
+
+Todas as implementações devem manter o padrão visual atual do sistema, seguindo boas práticas de arquitetura, responsividade, performance e organização do código.
+
+---
+
+# 1. Associação entre Personal Trainer e Aluno
+
+## Problema Atual
+
+O cadastro de novos alunos não está criando corretamente o vínculo entre o perfil do Personal Trainer e o perfil do Aluno.
+
+## Implementação Esperada
+
+O sistema deve permitir duas formas de cadastro:
+
+* Cadastro Manual realizado pelo Personal Trainer;
+* Auto Cadastro realizado pelo próprio Aluno.
+
+Independentemente da forma de cadastro, ambos os perfis devem ficar associados automaticamente.
+
+Essa associação será utilizada por diversas funcionalidades da plataforma, incluindo:
+
+* Agendamento de aulas;
+* Notificações;
+* Compartilhamento de informações;
+* Histórico de relacionamento;
+* Comunicação entre Personal e Aluno;
+* Demais funcionalidades que dependam do vínculo entre ambos.
+
+### Critérios de aceite
+
+* O vínculo deve existir em ambos os perfis.
+* O Personal deve visualizar todos os seus alunos.
+* O Aluno deve visualizar seu Personal.
+* Todas as funcionalidades futuras devem utilizar essa associação.
+
+---
+
+# 2. Fluxo de Agendamento de Aulas
+
+## Implementação Esperada
+
+Quando um Aluno solicitar uma aula para um Personal Trainer:
+
+O sistema deverá:
+
+* criar a solicitação;
+* enviar uma notificação interna ao Personal;
+* enviar um e-mail ao Personal;
+* permitir que o Personal aceite ou recuse a solicitação.
+
+Após a decisão:
+
+* o Aluno deverá receber uma notificação informando se a aula foi aceita ou recusada.
+
+O mesmo fluxo deverá funcionar no sentido inverso:
+
+Personal → Aluno.
+
+---
+
+### Estados possíveis
+
+* Solicitação enviada
+* Aguardando aprovação
+* Aceita
+* Recusada
+* Cancelada
+
+---
+
+### Critérios de aceite
+
+Todo agendamento deverá gerar:
+
+* notificação interna;
+* e-mail;
+* atualização automática do status.
+
+---
+
+# 3. Correção da Agenda
+
+## Problema Atual
+
+Não é possível criar novos eventos corretamente.
+
+## Implementação Esperada
+
+Corrigir completamente a criação de eventos.
+
+Após criar um evento:
+
+* ele deve aparecer imediatamente na agenda;
+* ocupar exatamente o horário selecionado;
+* possuir horário inicial e final;
+* respeitar conflitos de horário.
+
+A visualização deve ser semelhante ao comportamento de agendas modernas como:
+
+* Google Calendar
+* Microsoft Teams
+* Outlook
+
+Os blocos devem possuir:
+
+* cor diferenciada;
+* horário inicial;
+* horário final;
+* título do evento.
+
+---
+
+# 4. Exibição Visual das Solicitações de Aula
+
+Atualmente a solicitação de aula não possui uma representação visual adequada.
+
+Ela deve utilizar exatamente a mesma estrutura visual dos eventos da agenda.
+
+Ao clicar sobre a solicitação, abrir um modal ou painel lateral contendo:
+
+* título;
+* aluno;
+* personal;
+* data;
+* horário;
+* observações;
+* status;
+* ações disponíveis (Aceitar, Recusar, Cancelar).
+
+---
+
+# 5. Perfil Público dos Personal Trainers
+
+Criar um perfil público moderno para os Personais.
+
+Objetivo:
+
+Quando um aluno pesquisar por um Personal Trainer, deverá visualizar um perfil semelhante a uma combinação entre **LinkedIn** e **Instagram**.
+
+## Informações exibidas
+
+### Cabeçalho
+
+* Foto
+* Nome
+* Cidade
+* Estado
+* Especialidades
+* Formação
+* Experiência
+* Certificações
+* Biografia
+
+---
+
+### Estatísticas
+
+* Quantidade de alunos
+* Avaliações
+* Nota média
+* Anos de experiência
+* Quantidade de treinos publicados
+
+---
+
+### Contato
+
+* WhatsApp
+* Instagram
+* LinkedIn
+* Site
+* E-mail
+
+---
+
+### Avaliações
+
+Exibir:
+
+* nota média;
+* comentários;
+* quantidade de avaliações.
+
+---
+
+### Feed
+
+Criar um feed semelhante ao Instagram contendo:
+
+* fotos;
+* vídeos;
+* treinos publicados;
+* dicas;
+* conquistas;
+* antes/depois;
+* conteúdos compartilhados.
+
+O feed deve permitir:
+
+* curtidas;
+* comentários;
+* compartilhamentos;
+* visualização em grade.
+
+---
+
+# 6. Busca Inteligente de Alunos
+
+Na tela do Personal Trainer existe uma busca de alunos.
+
+Ela deve funcionar pesquisando por:
+
+* Nome
+* E-mail
+* CPF
+
+A busca deverá ocorrer em tempo real ou após confirmação.
+
+O resultado deverá exibir um card contendo:
+
+* Foto
+* Nome
+* Idade
+* Cidade
+* Objetivo
+* Status (Aluno do Personal ou Não)
+
+Ao clicar no resultado abrir o perfil completo.
+
+---
+
+# 7. Perfil Completo do Aluno
+
+Criar uma tela específica para visualização do perfil do aluno.
+
+Exibir:
+
+## Dados pessoais
+
+* Foto
+* Nome
+* Idade
+* Altura
+* Peso
+* Objetivo
+
+---
+
+## Informações físicas
+
+* IMC
+* Percentual de gordura
+* Massa muscular
+* Histórico
+
+---
+
+## Informações de treino
+
+* Frequência semanal
+* Últimos treinos
+* Evolução
+* Metas
+
+---
+
+## Feed
+
+Mostrar as publicações do aluno.
+
+---
+
+## Principal funcionalidade
+
+Adicionar um botão:
+
+**"Conectar como Meu Aluno"**
+
+Ao clicar:
+
+* criar associação entre Personal e Aluno;
+* atualizar ambos os perfis;
+* liberar funcionalidades compartilhadas.
+
+---
+
+# 8. Feed Social
+
+Criar um feed para todos os usuários da plataforma.
+
+Perfis contemplados:
+
+* Personal Trainer
+* Aluno
+
+Inspirado no Instagram.
+
+Cada publicação poderá conter:
+
+* Foto
+* Vídeo
+* Texto
+* Tempo de treino
+* Exercícios realizados
+* Evolução física
+* Conquistas
+* Check-in de treino
+
+Interações disponíveis:
+
+* Curtidas
+* Comentários
+* Compartilhamentos
+* Salvar publicação
+
+---
+
+# 9. Requisitos Técnicos
+
+Durante toda a implementação, garantir:
+
+* Correção dos bugs existentes antes da criação de novas funcionalidades.
+* Componentes reutilizáveis.
+* Código limpo e organizado.
+* Responsividade para desktop e mobile.
+* Atualização automática da interface após alterações (sem necessidade de recarregar a página).
+* Tratamento adequado de erros.
+* Estados de carregamento (loading).
+* Mensagens de sucesso e erro para todas as ações.
+* Persistência correta dos dados no banco.
+* Validação de formulários.
+* Controle de permissões entre perfis.
+* Performance otimizada.
+
+---
+
+# Critério Final de Entrega
+
+Ao concluir as implementações:
+
+* nenhum fluxo deverá conter funcionalidades incompletas;
+* todas as telas deverão estar totalmente conectadas entre si;
+* todas as regras de negócio deverão estar funcionando de ponta a ponta;
+* todas as ações deverão refletir corretamente no banco de dados e na interface;
+* a experiência do usuário deve ser fluida, intuitiva e semelhante às melhores plataformas modernas de produtividade e redes sociais, mantendo a identidade do Bricks.

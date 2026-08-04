@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -56,9 +58,19 @@ interface Workout {
   objective: string | null;
 }
 
+interface SearchUser {
+  id: string;
+  name: string;
+  email: string;
+  userType: string;
+  photoUrl: string | null;
+}
+
 export default function StudentsPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("my-students");
   const [isAssignWorkoutOpen, setIsAssignWorkoutOpen] = useState(false);
   const [isNewStudentOpen, setIsNewStudentOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<StudentWithUser | null>(null);
@@ -70,6 +82,27 @@ export default function StudentsPage() {
 
   const { data: workouts } = useQuery<Workout[]>({
     queryKey: ["/api/workouts"],
+  });
+
+  const { data: searchResults, isLoading: searchLoading } = useQuery<SearchUser[]>({
+    queryKey: ["/api/users/search", globalSearch],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(globalSearch)}`);
+      return res.json();
+    },
+    enabled: globalSearch.trim().length >= 2,
+  });
+
+  const connectMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiRequest("POST", `/api/students/connect/${userId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      toast({ title: "Aluno conectado com sucesso!" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
   const assignWorkoutMutation = useMutation({
@@ -98,6 +131,8 @@ export default function StudentsPage() {
     student.user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const myStudentUserIds = new Set(students?.map((s) => s.user.id) || []);
+
   const handleAssignWorkout = (student: StudentWithUser) => {
     setSelectedStudent(student);
     setIsAssignWorkoutOpen(true);
@@ -106,23 +141,12 @@ export default function StudentsPage() {
   return (
     <AppLayout>
       <div className="p-4 md:p-8 max-w-7xl mx-auto">
-        <div className="mb-8 fade-in">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Meus Alunos</h1>
-          <p className="text-muted-foreground">
-            Gerencie seus alunos e atribua treinos personalizados.
-          </p>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-4 mb-8 fade-in">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              placeholder="Buscar aluno por nome ou email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              data-testid="input-search-student"
-            />
+        <div className="mb-6 fade-in flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold mb-1">Alunos</h1>
+            <p className="text-muted-foreground text-sm">
+              Gerencie seus alunos e encontre novos talentos.
+            </p>
           </div>
           <Button onClick={() => setIsNewStudentOpen(true)} data-testid="button-new-student">
             <UserPlus className="w-4 h-4 mr-2" />
@@ -130,7 +154,27 @@ export default function StudentsPage() {
           </Button>
         </div>
 
-        {isLoading ? (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="fade-in">
+          <TabsList className="mb-6 bg-muted/50">
+            <TabsTrigger value="my-students">
+              Meus Alunos {students && `(${students.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="search">Buscar Usuários</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="my-students">
+            <div className="relative mb-6">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                placeholder="Filtrar por nome ou email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-student"
+              />
+            </div>
+
+            {isLoading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="bg-card border-border/50">
@@ -207,7 +251,7 @@ export default function StudentsPage() {
                       <Plus className="w-4 h-4 mr-1" />
                       Atribuir Treino
                     </Button>
-                    <Link href={`/students/${student.id}`}>
+                    <Link href={`/students/profile/${student.user.id}`}>
                       <Button variant="ghost" size="sm">
                         <ChevronRight className="w-4 h-4" />
                       </Button>
@@ -230,6 +274,91 @@ export default function StudentsPage() {
             </p>
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="search">
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou email..."
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-global-search"
+                />
+              </div>
+
+              {globalSearch.trim().length < 2 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>Digite pelo menos 2 caracteres para buscar</p>
+                </div>
+              )}
+
+              {searchLoading && (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              )}
+
+              {searchResults && searchResults.length === 0 && globalSearch.trim().length >= 2 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>Nenhum usuário encontrado</p>
+                </div>
+              )}
+
+              {searchResults && searchResults.length > 0 && (
+                <div className="space-y-3">
+                  {searchResults.map((u) => {
+                    const isAlreadyMyStudent = myStudentUserIds.has(u.id);
+                    const initials = u.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+                    return (
+                      <Card key={u.id} className="bg-card border-border/50">
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={u.photoUrl || undefined} />
+                            <AvatarFallback className="bg-primary/20 text-primary font-semibold">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">{u.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">{u.email}</p>
+                            <Badge variant="secondary" className="text-[10px] mt-1">
+                              {u.userType === "personal" ? "Personal Trainer" : "Aluno"}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <Link href={`/students/profile/${u.id}`}>
+                              <Button variant="outline" size="sm">Ver Perfil</Button>
+                            </Link>
+                            {u.userType === "student" && !isAlreadyMyStudent && (
+                              <Button
+                                size="sm"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                                onClick={() => connectMutation.mutate(u.id)}
+                                disabled={connectMutation.isPending}
+                              >
+                                <UserPlus className="w-3.5 h-3.5 mr-1" /> Conectar
+                              </Button>
+                            )}
+                            {isAlreadyMyStudent && (
+                              <Badge className="bg-primary/20 text-primary border border-primary/30">
+                                Meu Aluno
+                              </Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <Dialog open={isAssignWorkoutOpen} onOpenChange={setIsAssignWorkoutOpen}>
           <DialogContent className="bg-card border-border">
