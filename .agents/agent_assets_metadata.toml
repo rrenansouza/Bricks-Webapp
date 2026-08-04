@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "icw8iCEmuWxbyeDDt_Pxf"
+uri = "file://AUDITORIA_FUNCIONAL_BRICKS.md"
+type = "text"
+title = "Auditoria Funcional Completa — Bricks"
+description = "Relatório completo com inventário de funcionalidades, bugs, fluxos, UX e roadmap de correções."
