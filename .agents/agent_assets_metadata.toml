@@ -7,3 +7,10 @@ uri = "file://AUDITORIA_FUNCIONAL_BRICKS.md"
 type = "text"
 title = "Auditoria Funcional Completa — Bricks"
 description = "Relatório completo com inventário de funcionalidades, bugs, fluxos, UX e roadmap de correções."
+
+[[outputs]]
+id = "F-vQP0y3XiO9gC1Pws4fq"
+uri = "file://ARQUITETURA_BRICKS.md"
+type = "text"
+title = "Documentação Técnica Completa — Bricks"
+description = "22 seções: stack, schema, APIs, fluxos, regras de negócio, segurança, dívida técnica e roadmap. Pronto para entrega ao Tech Lead."

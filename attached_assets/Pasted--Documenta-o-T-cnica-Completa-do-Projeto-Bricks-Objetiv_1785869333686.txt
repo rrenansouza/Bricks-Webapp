@@ -1,0 +1,437 @@
+# Documentação Técnica Completa do Projeto Bricks
+
+## Objetivo
+
+Quero que você realize uma análise completa do projeto **Bricks** e gere uma documentação técnica detalhada.
+
+**Não realize nenhuma alteração no código.**
+
+O objetivo é documentar integralmente a arquitetura do sistema para que um novo Tech Lead possa compreender o projeto sem precisar analisar manualmente todo o código-fonte.
+
+A documentação deve refletir exatamente o estado atual do projeto.
+
+Caso alguma informação não exista, informe explicitamente que ela não está implementada.
+
+---
+
+# 1. Visão Geral do Produto
+
+Descreva:
+
+* Objetivo do Bricks
+* Público-alvo
+* Tipos de usuários
+* Problemas que o sistema resolve
+* Principais módulos existentes
+* Principais funcionalidades implementadas
+
+---
+
+# 2. Stack Tecnológica
+
+Liste todas as tecnologias utilizadas.
+
+Incluindo:
+
+Frontend
+
+Backend
+
+Banco de Dados
+
+ORM
+
+Frameworks
+
+Bibliotecas
+
+Autenticação
+
+Upload de arquivos
+
+Notificações
+
+Envio de e-mails
+
+Storage
+
+Serviços externos
+
+Integrações
+
+Ferramentas de build
+
+Ferramentas de deploy
+
+---
+
+# 3. Estrutura do Projeto
+
+Documente toda a árvore de diretórios.
+
+Explique a finalidade de cada pasta.
+
+Exemplo:
+
+Frontend
+
+Backend
+
+Shared
+
+Components
+
+Pages
+
+Hooks
+
+Utils
+
+Services
+
+Database
+
+API
+
+Middleware
+
+Assets
+
+Config
+
+Scripts
+
+---
+
+# 4. Arquitetura Geral
+
+Explique a arquitetura utilizada.
+
+Informe:
+
+* padrão arquitetural;
+* fluxo de dados;
+* comunicação entre frontend e backend;
+* gerenciamento de estado;
+* organização dos componentes;
+* comunicação com APIs.
+
+Caso existam limitações arquiteturais, descreva-as.
+
+---
+
+# 5. Banco de Dados
+
+Documente completamente o banco.
+
+Para cada tabela informe:
+
+* finalidade;
+* principais campos;
+* relacionamentos;
+* chaves primárias;
+* chaves estrangeiras;
+* índices;
+* restrições.
+
+Depois gere um diagrama textual dos relacionamentos entre as entidades.
+
+---
+
+# 6. Modelos de Negócio
+
+Documente todas as entidades existentes.
+
+Exemplo:
+
+Usuário
+
+Aluno
+
+Personal Trainer
+
+Evento
+
+Agendamento
+
+Treino
+
+Notificação
+
+Postagem
+
+Comentário
+
+Curtida
+
+Avaliação
+
+Mensagem
+
+Conexão entre Personal e Aluno
+
+e quaisquer outras existentes.
+
+Explique a responsabilidade de cada uma.
+
+---
+
+# 7. Fluxos do Sistema
+
+Documente todos os fluxos implementados.
+
+Para cada fluxo informe:
+
+* início;
+* etapas;
+* regras;
+* validações;
+* finalização;
+* entidades envolvidas.
+
+---
+
+# 8. APIs
+
+Liste todas as APIs.
+
+Para cada endpoint informe:
+
+* rota;
+* método HTTP;
+* parâmetros;
+* autenticação;
+* resposta;
+* finalidade.
+
+---
+
+# 9. Componentes
+
+Liste todos os componentes reutilizáveis.
+
+Informe:
+
+* responsabilidade;
+* onde são utilizados;
+* dependências.
+
+---
+
+# 10. Páginas
+
+Liste todas as páginas existentes.
+
+Informe:
+
+* objetivo;
+* funcionalidades;
+* componentes utilizados;
+* integrações.
+
+---
+
+# 11. Autenticação
+
+Explique completamente:
+
+* login;
+* logout;
+* recuperação de senha;
+* autorização;
+* perfis;
+* permissões;
+* sessões.
+
+---
+
+# 12. Integrações
+
+Liste todas as integrações existentes.
+
+Exemplo:
+
+Banco
+
+E-mail
+
+Notificações
+
+Upload
+
+Storage
+
+Serviços externos
+
+OAuth
+
+Google
+
+Calendário
+
+e quaisquer outras.
+
+---
+
+# 13. Serviços
+
+Documente todos os serviços existentes.
+
+Explique:
+
+* responsabilidade;
+* dependências;
+* onde são utilizados.
+
+---
+
+# 14. Regras de Negócio
+
+Liste todas as regras de negócio implementadas.
+
+Exemplo:
+
+Quem pode criar eventos.
+
+Quem pode visualizar alunos.
+
+Quem pode editar perfis.
+
+Como ocorre um agendamento.
+
+Como ocorre uma associação entre aluno e personal.
+
+Todas as validações existentes.
+
+---
+
+# 15. Configurações
+
+Documente:
+
+* variáveis de ambiente;
+* configurações globais;
+* middlewares;
+* interceptadores;
+* providers;
+* contextos.
+
+---
+
+# 16. Segurança
+
+Explique:
+
+* autenticação;
+* autorização;
+* proteção de rotas;
+* criptografia;
+* armazenamento de senhas;
+* proteção de uploads;
+* validações.
+
+---
+
+# 17. Estado Atual do Projeto
+
+Liste:
+
+* módulos completos;
+* módulos parcialmente implementados;
+* módulos iniciados;
+* módulos ainda não iniciados.
+
+---
+
+# 18. Dependências Técnicas
+
+Informe quais módulos dependem de outros.
+
+Exemplo:
+
+Agenda depende da autenticação.
+
+Feed depende do upload.
+
+Notificações dependem do relacionamento Personal ↔ Aluno.
+
+---
+
+# 19. Dívida Técnica Conhecida
+
+Liste:
+
+* pontos frágeis;
+* código provisório;
+* TODOs;
+* soluções temporárias;
+* limitações.
+
+---
+
+# 20. Roadmap Técnico Atual
+
+Com base no estado do código, indique qual parece ser a direção atual do projeto.
+
+---
+
+# 21. Árvore Completa do Sistema
+
+Monte um mapa hierárquico do projeto.
+
+Exemplo:
+
+Bricks
+
+├── Frontend
+
+│ ├── Dashboard
+
+│ ├── Agenda
+
+│ ├── Feed
+
+│ ├── Perfil
+
+│ ├── Busca
+
+│ └── Configurações
+
+├── Backend
+
+│ ├── Auth
+
+│ ├── Users
+
+│ ├── Agenda
+
+│ ├── Feed
+
+│ ├── Notifications
+
+│ └── Upload
+
+└── Database
+
+---
+
+# 22. Resumo Executivo
+
+Ao final gere um resumo contendo:
+
+* visão geral da arquitetura;
+* principais módulos;
+* tecnologias;
+* maturidade da arquitetura;
+* pontos fortes;
+* limitações;
+* riscos técnicos;
+* observações importantes para um novo Tech Lead assumir o projeto.
+
+---
+
+## Formato de Entrega
+
+A documentação deve ser gerada em Markdown (`ARQUITETURA_BRICKS.md`), utilizando títulos, subtítulos, tabelas, listas e diagramas textuais para facilitar a leitura.
+
+Não altere nenhum arquivo do projeto. Apenas gere a documentação técnica completa do estado atual da aplicação.
