@@ -1207,6 +1207,11 @@ export async function registerRoutes(
       const student = await storage.getStudentByUserId(req.user!.id);
       const user = await storage.getUserById(req.user!.id);
 
+      // Validate that the student has a relationship with this personal
+      if (!student || student.personalId !== req.params.id) {
+        return res.status(403).json({ message: "Você precisa ter sido atendido por este personal para avaliá-lo" });
+      }
+
       const { rating, comment } = req.body;
       
       if (!rating || rating < 1 || rating > 5) {
@@ -1279,6 +1284,15 @@ export async function registerRoutes(
         userType: "student",
       });
 
+      // Validate and convert birthDate
+      let parsedBirthDate: Date | undefined = undefined;
+      if (validatedData.birthDate) {
+        parsedBirthDate = new Date(validatedData.birthDate);
+        if (isNaN(parsedBirthDate.getTime())) {
+          return res.status(400).json({ message: "Data de nascimento inválida" });
+        }
+      }
+
       // Create student profile
       const student = await storage.createStudent({
         userId: user.id,
@@ -1289,7 +1303,7 @@ export async function registerRoutes(
         maritalStatus: validatedData.maritalStatus,
         gender: validatedData.gender,
         biologicalSex: validatedData.biologicalSex,
-        birthDate: validatedData.birthDate ? new Date(validatedData.birthDate) : undefined,
+        birthDate: parsedBirthDate,
         cep: validatedData.cep,
         street: validatedData.street,
         neighborhood: validatedData.neighborhood,
@@ -1357,6 +1371,15 @@ export async function registerRoutes(
       let user = await storage.getUserByEmail(email);
       if (user) {
         return res.status(400).json({ message: "Email já cadastrado" });
+      }
+
+      // Validate and convert birthDate before passing to storage
+      if (profileData.birthDate) {
+        const parsed = new Date(profileData.birthDate as string);
+        if (isNaN(parsed.getTime())) {
+          return res.status(400).json({ message: "Data de nascimento inválida" });
+        }
+        profileData.birthDate = parsed as any;
       }
 
       // Create new user

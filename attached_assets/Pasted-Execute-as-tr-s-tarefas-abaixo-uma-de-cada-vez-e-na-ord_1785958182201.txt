@@ -1,0 +1,59 @@
+Execute as três tarefas abaixo, uma de cada vez e na ordem. Depois de cada
+tarefa, rode um teste manual que comprove de forma inequívoca que o
+comportamento mudou (não apenas um teste que "passaria de qualquer jeito").
+Não pule para a próxima se a anterior não passar no teste — pare e relate
+o problema.
+
+TAREFA 1 (Sanitizar logs e middleware de erro):
+Em server/index.ts, no middleware de logging, remova o log do corpo completo
+da resposta (capturedJsonResponse) quando NODE_ENV for diferente de
+"development". No middleware de tratamento de erro global, remova qualquer
+"throw err" que aconteça depois do res.json() de erro — substitua por
+console.error para registrar o erro sem relançar a exceção.
+Teste: dispare um erro proposital em uma rota (ex: payload inválido) e
+confirme DUAS coisas: (1) a resposta de erro chega normal ao cliente e o
+servidor não derruba a request; (2) o log do servidor, em modo não-dev,
+não imprime o corpo da resposta/dados sensíveis. Mostre o log antes e
+depois da mudança para comparação.
+
+TAREFA 2 (Bug de birthDate no cadastro de aluno):
+No handler de criação de aluno (POST /api/students/create e no fluxo de
+auto-cadastro via token), converta o campo birthDate de string para um
+objeto Date (new Date(birthDate)) antes de passar para o Drizzle/banco.
+Valide que a conversão resultou em uma data válida antes de prosseguir;
+se inválida, retorne 400 com mensagem clara.
+Teste: cadastre um aluno de teste preenchendo a data de nascimento (use
+o fluxo real da API, com um payload realista) e confirme que o registro
+é criado sem erro 500, com a data salva corretamente no banco. Mostre o
+registro salvo (ex: consulta direta ao banco ou resposta da API).
+
+TAREFA 3 (Validação de vínculo antes de review):
+No handler POST /api/personals/:id/reviews, antes de criar a avaliação,
+verifique se existe um student vinculado ao usuário autenticado cujo
+personalId corresponda ao personal sendo avaliado. Se não houver vínculo,
+retorne 403 com mensagem "Você precisa ter sido atendido por este personal
+para avaliá-lo". Não altere o schema da tabela reviews.
+Teste, com DOIS cenários (os dois são obrigatórios para aprovar):
+(a) um aluno tenta avaliar um personal com quem NUNCA teve vínculo → deve
+retornar 403;
+(b) o mesmo aluno avalia o personal AO QUAL ele está de fato vinculado →
+deve criar a review normalmente.
+Mostre a resposta de ambos os cenários.
+
+AO FINALIZAR AS TRÊS, gere um relatório resumido no seguinte formato:
+
+## Relatório de Execução — A4, A5, A6
+### Tarefa 1 — Sanitizar logs e middleware de erro
+- Status: [OK / Falhou]
+- O que foi alterado: [arquivos e trecho de lógica]
+- Resultado do teste: [comparação de log antes/depois + confirmação de que a request não quebra]
+
+### Tarefa 2 — Bug de birthDate
+- Status: [OK / Falhou]
+- O que foi alterado: [...]
+- Resultado do teste: [registro criado, sem erro 500, data correta no banco]
+
+### Tarefa 3 — Validação de vínculo antes de review
+- Status: [OK / Falhou]
+- O que foi alterado: [...]
+- Resultado do teste: [resultado do cenário (a) e do cenário (b), separadamente]
