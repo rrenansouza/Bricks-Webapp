@@ -55,7 +55,7 @@ export const personalProfiles = pgTable("personal_profiles", {
 // Students table - extends user with student-specific info
 export const students = pgTable("students", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 36 }).references(() => users.id, { onDelete: "cascade" }),
   personalId: varchar("personal_id", { length: 36 }).references(() => personalProfiles.id, { onDelete: "set null" }),
   goals: text("goals"),
   notes: text("notes"),

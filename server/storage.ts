@@ -807,7 +807,7 @@ export class DatabaseStorage implements IStorage {
     const token = randomUUID();
     
     const [newStudent] = await db.insert(students).values({
-      userId: "", // Will be set when student registers
+      userId: null, // Will be set when student self-registers
       personalId,
       registrationToken: token,
       registrationStatus: "pending",
