@@ -18,7 +18,7 @@ import {
   createStudentFormSchema,
 } from "@shared/schema";
 
-const JWT_SECRET = process.env.SESSION_SECRET || "bricks-secret-key-change-in-production";
+const JWT_SECRET = process.env.SESSION_SECRET!;
 
 // Auth middleware
 interface AuthRequest extends Request {
@@ -47,6 +47,9 @@ function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
     req.user = decoded;
     next();
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ message: "Sessão expirada, faça login novamente" });
+    }
     return res.status(401).json({ message: "Token inválido" });
   }
 }
@@ -329,6 +332,38 @@ export async function registerRoutes(
     }
   });
 
+  // Get personal stats (for dashboard) — MUST be before /api/personals/:id
+  app.get("/api/personals/stats", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      if (req.user!.userType !== "personal") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const students = await storage.getStudentsByPersonalId(profile.id);
+      const workouts = await storage.getWorkoutsByPersonalId(profile.id);
+      const appointments = await storage.getAppointmentsByPersonalId(profile.id);
+      
+      const upcomingAppointments = appointments.filter(
+        (a) => new Date(a.startTime) > new Date() && a.status !== "cancelled"
+      );
+
+      res.json({
+        totalStudents: students.length,
+        activeWorkouts: workouts.length,
+        upcomingAppointments: upcomingAppointments.length,
+        averageRating: parseFloat(profile.averageRating || "0"),
+      });
+    } catch (error) {
+      console.error("Get personal stats error:", error);
+      res.status(500).json({ message: "Erro ao buscar estatísticas" });
+    }
+  });
+
   // Get personal by ID
   app.get("/api/personals/:id", optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
     try {
@@ -392,38 +427,6 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Update personal error:", error);
       res.status(500).json({ message: "Erro ao atualizar perfil" });
-    }
-  });
-
-  // Get personal stats (for dashboard)
-  app.get("/api/personals/stats", authMiddleware, async (req: AuthRequest, res: Response) => {
-    try {
-      if (req.user!.userType !== "personal") {
-        return res.status(403).json({ message: "Acesso não autorizado" });
-      }
-
-      const profile = await storage.getPersonalByUserId(req.user!.id);
-      if (!profile) {
-        return res.status(404).json({ message: "Perfil não encontrado" });
-      }
-
-      const students = await storage.getStudentsByPersonalId(profile.id);
-      const workouts = await storage.getWorkoutsByPersonalId(profile.id);
-      const appointments = await storage.getAppointmentsByPersonalId(profile.id);
-      
-      const upcomingAppointments = appointments.filter(
-        (a) => new Date(a.startTime) > new Date() && a.status !== "cancelled"
-      );
-
-      res.json({
-        totalStudents: students.length,
-        activeWorkouts: workouts.length,
-        upcomingAppointments: upcomingAppointments.length,
-        averageRating: parseFloat(profile.averageRating || "0"),
-      });
-    } catch (error) {
-      console.error("Get personal stats error:", error);
-      res.status(500).json({ message: "Erro ao buscar estatísticas" });
     }
   });
 

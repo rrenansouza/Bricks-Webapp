@@ -3,6 +3,15 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
+// Validação de variáveis de ambiente obrigatórias
+if (!process.env.SESSION_SECRET) {
+  console.error(
+    "[FATAL] A variável de ambiente SESSION_SECRET não está definida. " +
+    "Defina-a antes de iniciar o servidor."
+  );
+  process.exit(1);
+}
+
 const app = express();
 const httpServer = createServer(app);
 

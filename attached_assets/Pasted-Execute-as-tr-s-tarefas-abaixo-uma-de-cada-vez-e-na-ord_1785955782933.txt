@@ -1,0 +1,48 @@
+Execute as três tarefas abaixo, uma de cada vez e na ordem. Depois de cada
+tarefa, rode um teste manual rápido pra confirmar que funcionou antes de
+seguir para a próxima. Não pule para a próxima se a anterior não passar
+no teste — pare e relate o problema.
+
+TAREFA 1 (SESSION_SECRET):
+No servidor Express, remova qualquer fallback hardcoded para SESSION_SECRET
+(ex: "insecure-secret"). Adicione uma validação no bootstrap do servidor
+(server/index.ts ou onde o app inicializa) que encerra o processo com
+process.exit(1) e uma mensagem de erro clara no console se a variável de
+ambiente SESSION_SECRET não estiver definida. Não altere nenhuma outra lógica.
+Teste: tente subir o servidor sem a env var (deve falhar com mensagem clara)
+e depois com ela definida (deve subir normal).
+
+TAREFA 2 (Expiração de JWT):
+No local onde o JWT é assinado (jwt.sign) no login e registro, adicione a
+opção expiresIn: '7d'. No middleware de autenticação, trate o erro
+TokenExpiredError retornando 401 com uma mensagem { message: "Sessão
+expirada, faça login novamente" }. Não altere o payload do token.
+Teste: gere um token com expiração curta (ex: '5s') temporariamente, espere
+expirar, confirme que uma rota protegida retorna 401 com a mensagem certa.
+Reverta para 7d depois do teste.
+
+TAREFA 3 (rota /api/personals/stats):
+Em server/routes.ts, localize as rotas GET /api/personals/stats e
+GET /api/personals/:id. Garanta que /api/personals/stats seja registrada
+ANTES de /api/personals/:id, para o Express não capturar "stats" como valor
+de :id. Não altere a lógica interna de nenhuma delas.
+Teste: chame GET /api/personals/stats autenticado como personal — deve
+retornar as estatísticas, não erro de "personal não encontrado".
+
+AO FINALIZAR AS TRÊS, gere um relatório resumido no seguinte formato:
+
+## Relatório de Execução — A1, A2, A3
+### Tarefa 1 — SESSION_SECRET
+- Status: [OK / Falhou]
+- O que foi alterado: [arquivos e trecho de lógica]
+- Resultado do teste: [o que aconteceu ao testar]
+
+### Tarefa 2 — Expiração de JWT
+- Status: [OK / Falhou]
+- O que foi alterado: [...]
+- Resultado do teste: [...]
+
+### Tarefa 3 — Rota /api/personals/stats
+- Status: [OK / Falhou]
+- O que foi alterado: [...]
+- Resultado do teste: [...]
