@@ -1,0 +1,59 @@
+Execute as três tarefas abaixo, uma de cada vez e na ordem. Depois de cada
+tarefa, rode um teste manual com DOIS cenários: (a) tentativa indevida
+(deve ser bloqueada) e (b) ação legítima do dono do recurso (deve
+funcionar normalmente). Os dois cenários são obrigatórios para aprovar
+cada tarefa. Não pule para a próxima se a anterior não passar — pare e
+relate o problema.
+
+TAREFA 1 (Ownership — eventos pessoais):
+Nos handlers PATCH e DELETE de /api/personal-events/:id, adicione uma
+verificação de que o evento pertence ao personal autenticado (comparando
+personalId do evento com o personal vinculado ao usuário do token) antes
+de executar a alteração ou exclusão. Se não pertencer, retorne 403.
+Teste: (a) crie um evento com o Personal A, tente editar/excluir logado
+como Personal B → 403; (b) Personal A edita/exclui o próprio evento →
+funciona.
+
+TAREFA 2 (Ownership — financeiro):
+Nos handlers PATCH e DELETE de /api/financial/:id, adicione a mesma
+verificação de ownership: o registro financeiro deve pertencer ao personal
+autenticado. Caso contrário, 403.
+Teste: mesmo formato da Tarefa 1, agora em cima de /api/financial/:id —
+(a) Personal B tenta mexer em registro financeiro do Personal A → 403;
+(b) Personal A mexe no próprio registro → funciona.
+
+TAREFA 3 (Ownership — appointments e notificações):
+No handler PATCH /api/appointments/:id/status, verifique se o usuário
+autenticado é o personal ou o aluno envolvidos naquele appointment antes
+de permitir a alteração de status. No handler PATCH
+/api/notifications/inbox/:id/read, verifique se a notificação pertence
+ao userId autenticado antes de marcar como lida.
+Atenção: a tabela students agora permite userId nulo (students com
+convite pendente, sem conta ainda). Ao resolver quem é "o aluno" de um
+appointment, garanta que a checagem lida corretamente com esse caso
+(um appointment não deveria existir para um student com userId nulo,
+mas trate defensivamente — se studentId do appointment apontar para um
+student sem userId, negue a ação com 403 em vez de quebrar com erro 500).
+Teste com QUATRO cenários: (a) usuário fora do appointment tenta mudar
+status → 403; (b) o personal envolvido muda o status → funciona;
+(c) o aluno envolvido muda o status → funciona; (d) usuário tenta marcar
+como lida uma notificação que não é dele → 403.
+
+AO FINALIZAR AS TRÊS, gere um relatório resumido no seguinte formato:
+
+## Relatório de Execução — B1, B2, B3
+### Tarefa 1 — Ownership em eventos pessoais
+- Status: [OK / Falhou]
+- O que foi alterado: [arquivos e trecho de lógica]
+- Resultado do teste: [cenário (a) e (b), separadamente]
+
+### Tarefa 2 — Ownership em financeiro
+- Status: [OK / Falhou]
+- O que foi alterado: [...]
+- Resultado do teste: [cenário (a) e (b), separadamente]
+
+### Tarefa 3 — Ownership em appointments e notificações
+- Status: [OK / Falhou]
+- O que foi alterado: [...]
+- Resultado do teste: [cenários (a), (b), (c) e (d), separadamente]
+- Confirmação de que o caso de studentId com userId nulo foi tratado sem erro 500

@@ -1019,6 +1019,26 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Status inválido" });
       }
 
+      // Ownership check: only the personal or the student of this appointment may change status
+      const appointment = await storage.getAppointmentById(req.params.id);
+      if (!appointment) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+
+      if (req.user!.userType === "personal") {
+        const profile = await storage.getPersonalByUserId(req.user!.id);
+        if (!profile || appointment.personalId !== profile.id) {
+          return res.status(403).json({ message: "Você não tem permissão para alterar este agendamento" });
+        }
+      } else {
+        // student
+        const student = await storage.getStudentByUserId(req.user!.id);
+        // Defensive: student with null userId (pending invite) should not own appointments
+        if (!student || !student.userId || appointment.studentId !== student.id) {
+          return res.status(403).json({ message: "Você não tem permissão para alterar este agendamento" });
+        }
+      }
+
       const updated = await storage.updateAppointmentStatus(req.params.id, status);
       
       if (!updated) {
@@ -1088,6 +1108,14 @@ export async function registerRoutes(
   // Mark single notification as read
   app.patch("/api/notifications/inbox/:id/read", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
+      const notif = await storage.getNotificationById(req.params.id);
+      if (!notif) {
+        return res.status(404).json({ message: "Notificação não encontrada" });
+      }
+      if (notif.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Você não tem permissão para marcar esta notificação" });
+      }
+
       await storage.markNotificationRead(req.params.id);
       res.json({ ok: true });
     } catch (error) {
@@ -1544,11 +1572,20 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Acesso não autorizado" });
       }
 
-      const updated = await storage.updatePersonalEvent(req.params.id, req.body);
-      if (!updated) {
-        return res.status(404).json({ message: "Evento não encontrado" });
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
       }
 
+      const event = await storage.getPersonalEventById(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Evento não encontrado" });
+      }
+      if (event.personalId !== profile.id) {
+        return res.status(403).json({ message: "Você não tem permissão para editar este evento" });
+      }
+
+      const updated = await storage.updatePersonalEvent(req.params.id, req.body);
       res.json(updated);
     } catch (error) {
       console.error("Update event error:", error);
@@ -1561,6 +1598,19 @@ export async function registerRoutes(
     try {
       if (req.user!.userType !== "personal") {
         return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const event = await storage.getPersonalEventById(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Evento não encontrado" });
+      }
+      if (event.personalId !== profile.id) {
+        return res.status(403).json({ message: "Você não tem permissão para excluir este evento" });
       }
 
       await storage.deletePersonalEvent(req.params.id);
@@ -1641,6 +1691,7 @@ export async function registerRoutes(
       const validatedData = insertFinancialRecordSchema.parse({
         ...req.body,
         personalId: profile.id,
+        date: req.body.date ? new Date(req.body.date) : undefined,
       });
 
       const record = await storage.createFinancialRecord(validatedData);
@@ -1661,11 +1712,20 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Acesso não autorizado" });
       }
 
-      const updated = await storage.updateFinancialRecord(req.params.id, req.body);
-      if (!updated) {
-        return res.status(404).json({ message: "Registro não encontrado" });
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
       }
 
+      const record = await storage.getFinancialRecordById(req.params.id);
+      if (!record) {
+        return res.status(404).json({ message: "Registro não encontrado" });
+      }
+      if (record.personalId !== profile.id) {
+        return res.status(403).json({ message: "Você não tem permissão para editar este registro" });
+      }
+
+      const updated = await storage.updateFinancialRecord(req.params.id, req.body);
       res.json(updated);
     } catch (error) {
       console.error("Update financial error:", error);
@@ -1678,6 +1738,19 @@ export async function registerRoutes(
     try {
       if (req.user!.userType !== "personal") {
         return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+
+      const profile = await storage.getPersonalByUserId(req.user!.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil não encontrado" });
+      }
+
+      const record = await storage.getFinancialRecordById(req.params.id);
+      if (!record) {
+        return res.status(404).json({ message: "Registro não encontrado" });
+      }
+      if (record.personalId !== profile.id) {
+        return res.status(403).json({ message: "Você não tem permissão para excluir este registro" });
       }
 
       await storage.deleteFinancialRecord(req.params.id);
