@@ -1,0 +1,108 @@
+Vamos preparar o ambiente e concluir pendências, nesta ordem. Não pule
+etapas — se algo falhar, pare e relate antes de continuar.
+
+===================================================================
+PASSO 1 — Substituir o seed antigo pelo nosso (BRK-079)
+===================================================================
+Substitua o conteúdo de server/seed.ts (o script atual cria 40 personal
+trainers sem alunos e não serve para os testes que vamos fazer) pelo
+seguinte:
+
+Crie um script de seed (server/seed.ts, executável via "npm run seed")
+que popula o banco com 10 personal trainers e 10 alunos fictícios, todos
+com e-mail no domínio @brickstest.com e senha "Teste@123" (hasheada
+usando o mesmo fluxo de registro/hash de senha já existente no projeto —
+não insira direto no banco pulando a lógica de hash). O script deve ser
+idempotente: se rodar de novo, não deve duplicar os usuários (verifique
+por e-mail antes de criar).
+
+PERSONAL TRAINERS (nome | especialidade | cidade):
+1. Rafael Andrade | Hipertrofia e musculação | São Paulo, SP
+2. Camila Torres | Emagrecimento e nutrição esportiva | Rio de Janeiro, RJ
+3. Bruno Ferreira | Corrida e performance | Belo Horizonte, MG
+4. Juliana Martins | Treinamento funcional | Curitiba, PR
+5. Diego Souza | Crossfit e alta intensidade | Porto Alegre, RS
+6. Patrícia Lima | Pilates e mobilidade | São Paulo, SP
+7. Marcos Vinícius | Reabilitação e fisioterapia esportiva | Salvador, BA
+8. Fernanda Costa | Treinamento para terceira idade | Brasília, DF
+9. Gustavo Ramos | Gestantes e pós-parto | Campinas, SP
+10. Larissa Almeida | Treinamento infantil e adolescente | Florianópolis, SC
+
+Para cada personal, preencha também: telefone fictício, anos de
+experiência (variando entre 2 e 15), preço médio de sessão (entre R$60 e
+R$150) e uma bio curta (2-3 frases) condizente com a especialidade.
+
+ALUNOS (nome | objetivo | idade | cidade):
+1. Ana Beatriz Souza | Emagrecimento | 29 | São Paulo, SP
+2. Pedro Henrique Lima | Hipertrofia | 24 | Rio de Janeiro, RJ
+3. Mariana Rocha | Condicionamento geral | 35 | Belo Horizonte, MG
+4. Carlos Eduardo Nunes | Preparação para maratona | 41 | Curitiba, PR
+5. Beatriz Fernandes | Crossfit / alta performance | 27 | Porto Alegre, RS
+6. José Roberto Silva | Reabilitação pós-lesão de joelho | 52 | Salvador, BA
+7. Helena Martins | Terceira idade / mobilidade | 67 | Brasília, DF
+8. Rodrigo Alves | Ganho de força | 31 | Campinas, SP
+9. Camila Duarte | Pós-parto / retorno ao treino | 33 | Florianópolis, SC
+10. Lucas Gabriel Pereira | Iniciante sedentário | 22 | São Paulo, SP
+
+Distribua os 10 alunos entre os 10 personals (pode ser 1 aluno por
+personal, ou uma distribuição levemente desigual, à sua escolha),
+respeitando alguma coerência entre objetivo do aluno e especialidade do
+personal quando fizer sentido (ex: José Roberto com Marcos Vinícius, que
+é de reabilitação). Use o vínculo já existente entre student e personal
+no schema.
+
+Ao final, o script deve imprimir no console uma tabela com: Nome | Papel
+(Personal/Aluno) | E-mail | Senha | Especialidade ou Objetivo | Cidade —
+para os 20 usuários criados.
+
+Rode npm run seed e mostre a tabela completa de credenciais gerada.
+
+===================================================================
+PASSO 2 — Confirmação da Tarefa B1 (ownership em eventos pessoais),
+usando personas reais do seed
+===================================================================
+(a) crie um evento pessoal com Rafael Andrade, tente editar esse evento
+logado como Camila Torres, depois tente excluir esse mesmo evento
+também logado como Camila Torres → ambas as ações devem retornar 403
+(b) Rafael Andrade edita e exclui o próprio evento → deve funcionar
+normalmente em ambos os casos
+
+===================================================================
+PASSO 3 — Conclusão da Tarefa B3 (ownership em appointments e
+notificações), que ficou pela metade numa sessão anterior
+===================================================================
+Primeiro, revise o estado atual das verificações de ownership em PATCH
+/api/appointments/:id/status e PATCH /api/notifications/inbox/:id/read —
+me diga se já estão implementadas em ambos os handlers ou se algum ficou
+pela metade. Complete o que faltar.
+
+Depois, teste com os 4 cenários abaixo, usando personas reais do seed
+(ex: José Roberto Silva como aluno vinculado a Marcos Vinícius):
+(a) um usuário fora do appointment tenta mudar o status → deve retornar 403
+(b) o personal envolvido no appointment muda o status → deve funcionar
+(c) o aluno envolvido no appointment muda o status → deve funcionar
+(d) um usuário tenta marcar como lida uma notificação que não é dele → 403
+
+Atenção: a tabela students permite userId nulo (students com convite
+pendente, sem conta ainda). Se studentId de um appointment apontar para
+um student sem userId, a checagem deve negar a ação com 403 em vez de
+quebrar com erro 500 — confirme esse caso também, mesmo que seja um
+cenário hipotético não coberto pelas personas do seed.
+
+===================================================================
+AO FINAL, gere um relatório único no formato:
+===================================================================
+## Relatório de Execução — Seed (BRK-079), B1 (confirmação), B3 (conclusão)
+
+### Passo 1 — Seed de usuários
+- Status: [OK / Falhou]
+- Tabela completa de credenciais dos 20 usuários criados
+
+### Passo 2 — B1 (eventos pessoais)
+- Resultado do cenário (a) e (b), separadamente
+
+### Passo 3 — B3 (appointments e notificações)
+- Status: [OK / Falhou]
+- O que foi alterado (incluindo o que já estava feito antes da pausa)
+- Resultado de cada um dos 4 cenários, separadamente
+- Confirmação do caso studentId → student com userId nulo
