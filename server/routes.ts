@@ -766,7 +766,11 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Acesso não autorizado" });
       }
 
-      const validatedData = insertStudentWorkoutSchema.parse(req.body);
+      const swBody = { ...req.body };
+      if (swBody.startDate) swBody.startDate = new Date(swBody.startDate);
+      if (swBody.endDate) swBody.endDate = new Date(swBody.endDate);
+
+      const validatedData = insertStudentWorkoutSchema.parse(swBody);
       const assignment = await storage.createStudentWorkout(validatedData);
       res.status(201).json(assignment);
     } catch (error) {
@@ -963,8 +967,12 @@ export async function registerRoutes(
         }
       }
 
+      const apptBody = { ...req.body };
+      if (apptBody.startTime) apptBody.startTime = new Date(apptBody.startTime);
+      if (apptBody.endTime) apptBody.endTime = new Date(apptBody.endTime);
+
       const validatedData = insertAppointmentSchema.parse({
-        ...req.body,
+        ...apptBody,
         studentId,
         personalId,
         status: "pending",
