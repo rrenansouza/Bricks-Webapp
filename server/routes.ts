@@ -15,10 +15,64 @@ import {
   insertStudentWorkoutSchema,
   insertPersonalEventSchema,
   insertFinancialRecordSchema,
+  insertPersonalProfileSchema,
+  insertStudentSchema,
+  insertUserSchema,
   createStudentFormSchema,
 } from "@shared/schema";
 
 const JWT_SECRET = process.env.SESSION_SECRET!;
+
+const updatePersonalProfileSchema = insertPersonalProfileSchema
+  .pick({
+    bio: true,
+    specialties: true,
+    city: true,
+    neighborhood: true,
+    averagePrice: true,
+  })
+  .partial();
+
+const updateStudentProfileSchema = insertStudentSchema
+  .pick({
+    goals: true,
+    notes: true,
+  })
+  .partial();
+
+const updateWorkoutSchema = insertWorkoutSchema
+  .pick({
+    name: true,
+    objective: true,
+    description: true,
+  })
+  .partial();
+
+const updateWorkoutExerciseSchema = insertWorkoutExerciseSchema
+  .omit({ workoutId: true })
+  .partial();
+
+const completeStudentWorkoutSchema = insertStudentWorkoutSchema
+  .pick({ feedback: true })
+  .partial();
+
+const updateAppointmentStatusSchema = insertAppointmentSchema
+  .pick({ status: true })
+  .required({ status: true });
+
+const updateUserProfileSchema = insertUserSchema
+  .pick({ name: true, photoUrl: true })
+  .partial();
+
+const updatePersonalEventSchema = insertPersonalEventSchema
+  .omit({ personalId: true })
+  .partial();
+
+const updateFinancialRecordSchema = insertFinancialRecordSchema
+  .omit({ personalId: true, studentId: true })
+  .partial();
+
+const emptyPatchSchema = z.object({}).strict();
 
 // Auth middleware
 interface AuthRequest extends Request {
@@ -413,18 +467,14 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Perfil não encontrado" });
       }
 
-      const { bio, specialties, city, neighborhood, averagePrice } = req.body;
-      
-      const updated = await storage.updatePersonalProfile(profile.id, {
-        bio,
-        specialties,
-        city,
-        neighborhood,
-        averagePrice,
-      });
+      const validatedData = updatePersonalProfileSchema.parse(req.body);
+      const updated = await storage.updatePersonalProfile(profile.id, validatedData);
 
       res.json(updated);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Update personal error:", error);
       res.status(500).json({ message: "Erro ao atualizar perfil" });
     }
@@ -466,16 +516,14 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Perfil não encontrado" });
       }
 
-      const { goals, notes, personalId } = req.body;
-      
-      const updated = await storage.updateStudent(student.id, {
-        goals,
-        notes,
-        personalId,
-      });
+      const validatedData = updateStudentProfileSchema.parse(req.body);
+      const updated = await storage.updateStudent(student.id, validatedData);
 
       res.json(updated);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Update student error:", error);
       res.status(500).json({ message: "Erro ao atualizar perfil" });
     }
@@ -605,15 +653,14 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Acesso não autorizado" });
       }
 
-      const { name, objective, description } = req.body;
-      const updated = await storage.updateWorkout(req.params.id, {
-        name,
-        objective,
-        description,
-      });
+      const validatedData = updateWorkoutSchema.parse(req.body);
+      const updated = await storage.updateWorkout(req.params.id, validatedData);
 
       res.json(updated);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Update workout error:", error);
       res.status(500).json({ message: "Erro ao atualizar treino" });
     }
@@ -698,9 +745,13 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Acesso não autorizado" });
       }
 
-      const updated = await storage.updateWorkoutExercise(req.params.exerciseId, req.body);
+      const validatedData = updateWorkoutExerciseSchema.parse(req.body);
+      const updated = await storage.updateWorkoutExercise(req.params.exerciseId, validatedData);
       res.json(updated);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Update exercise error:", error);
       res.status(500).json({ message: "Erro ao atualizar exercício" });
     }
@@ -811,8 +862,11 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Acesso não autorizado" });
       }
 
-      const { feedback } = req.body;
-      const updated = await storage.markStudentWorkoutComplete(req.params.id, feedback);
+      const validatedData = completeStudentWorkoutSchema.parse(req.body);
+      const updated = await storage.markStudentWorkoutComplete(
+        req.params.id,
+        validatedData.feedback ?? undefined,
+      );
       
       if (!updated) {
         return res.status(404).json({ message: "Treino não encontrado" });
@@ -820,6 +874,9 @@ export async function registerRoutes(
 
       res.json(updated);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Complete workout error:", error);
       res.status(500).json({ message: "Erro ao marcar treino como completo" });
     }
@@ -1065,11 +1122,7 @@ export async function registerRoutes(
   // Update appointment status (with notification to other party)
   app.patch("/api/appointments/:id/status", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-      const { status } = req.body;
-      
-      if (!["pending", "confirmed", "cancelled", "completed"].includes(status)) {
-        return res.status(400).json({ message: "Status inválido" });
-      }
+      const { status } = updateAppointmentStatusSchema.parse(req.body);
 
       // Ownership check: only the personal or the student of this appointment may change status
       const appointment = await storage.getAppointmentById(req.params.id);
@@ -1136,6 +1189,9 @@ export async function registerRoutes(
 
       res.json(updated);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Update appointment status error:", error);
       res.status(500).json({ message: "Erro ao atualizar status" });
     }
@@ -1160,6 +1216,7 @@ export async function registerRoutes(
   // Mark single notification as read
   app.patch("/api/notifications/inbox/:id/read", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
+      emptyPatchSchema.parse(req.body);
       const notif = await storage.getNotificationById(req.params.id);
       if (!notif) {
         return res.status(404).json({ message: "Notificação não encontrada" });
@@ -1171,6 +1228,9 @@ export async function registerRoutes(
       await storage.markNotificationRead(req.params.id);
       res.json({ ok: true });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Mark notification read error:", error);
       res.status(500).json({ message: "Erro ao marcar notificação" });
     }
@@ -1179,9 +1239,13 @@ export async function registerRoutes(
   // Mark all notifications as read
   app.patch("/api/notifications/inbox/read-all", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
+      emptyPatchSchema.parse(req.body);
       await storage.markAllNotificationsRead(req.user!.id);
       res.json({ ok: true });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Mark all notifications read error:", error);
       res.status(500).json({ message: "Erro ao marcar notificações" });
     }
@@ -1194,12 +1258,8 @@ export async function registerRoutes(
   // Update user profile (name, photo)
   app.patch("/api/users/me", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-      const { name, photoUrl } = req.body;
-      
-      const updated = await storage.updateUser(req.user!.id, {
-        name,
-        photoUrl,
-      });
+      const validatedData = updateUserProfileSchema.parse(req.body);
+      const updated = await storage.updateUser(req.user!.id, validatedData);
 
       if (!updated) {
         return res.status(404).json({ message: "Usuário não encontrado" });
@@ -1208,6 +1268,9 @@ export async function registerRoutes(
       const { password: _, ...userWithoutPassword } = updated;
       res.json(userWithoutPassword);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Update user error:", error);
       res.status(500).json({ message: "Erro ao atualizar perfil" });
     }
@@ -1506,6 +1569,7 @@ export async function registerRoutes(
   // Approve student
   app.patch("/api/students/:id/approve", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
+      emptyPatchSchema.parse(req.body);
       if (req.user!.userType !== "personal") {
         return res.status(403).json({ message: "Acesso não autorizado" });
       }
@@ -1517,6 +1581,9 @@ export async function registerRoutes(
 
       res.json(student);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Approve student error:", error);
       res.status(500).json({ message: "Erro ao aprovar aluno" });
     }
@@ -1525,6 +1592,7 @@ export async function registerRoutes(
   // Reject student
   app.patch("/api/students/:id/reject", authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
+      emptyPatchSchema.parse(req.body);
       if (req.user!.userType !== "personal") {
         return res.status(403).json({ message: "Acesso não autorizado" });
       }
@@ -1536,6 +1604,9 @@ export async function registerRoutes(
 
       res.json(student);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Reject student error:", error);
       res.status(500).json({ message: "Erro ao rejeitar aluno" });
     }
@@ -1637,9 +1708,16 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Você não tem permissão para editar este evento" });
       }
 
-      const updated = await storage.updatePersonalEvent(req.params.id, req.body);
+      const eventBody = { ...req.body };
+      if (eventBody.startTime) eventBody.startTime = new Date(eventBody.startTime);
+      if (eventBody.endTime) eventBody.endTime = new Date(eventBody.endTime);
+      const validatedData = updatePersonalEventSchema.parse(eventBody);
+      const updated = await storage.updatePersonalEvent(req.params.id, validatedData);
       res.json(updated);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Update event error:", error);
       res.status(500).json({ message: "Erro ao atualizar evento" });
     }
@@ -1777,9 +1855,15 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Você não tem permissão para editar este registro" });
       }
 
-      const updated = await storage.updateFinancialRecord(req.params.id, req.body);
+      const financialBody = { ...req.body };
+      if (financialBody.date) financialBody.date = new Date(financialBody.date);
+      const validatedData = updateFinancialRecordSchema.parse(financialBody);
+      const updated = await storage.updateFinancialRecord(req.params.id, validatedData);
       res.json(updated);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: `Dados inválidos: ${error.errors[0].message}` });
+      }
       console.error("Update financial error:", error);
       res.status(500).json({ message: "Erro ao atualizar registro" });
     }

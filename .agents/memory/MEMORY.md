@@ -1,0 +1,1 @@
+- [PATCH allowlists](patch-validation.md) — PATCHs devem usar schemas Zod allowlistados com `pick`, mantendo chaves de identidade fora do payload.
