@@ -766,7 +766,17 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Acesso não autorizado" });
       }
 
-      const validatedData = insertStudentWorkoutSchema.parse(req.body);
+      const body = { ...req.body };
+      if (body.startDate) body.startDate = new Date(body.startDate);
+      if (body.endDate) body.endDate = new Date(body.endDate);
+      if (body.startDate && isNaN(body.startDate.getTime())) {
+        return res.status(400).json({ message: "Data inicial inválida" });
+      }
+      if (body.endDate && isNaN(body.endDate.getTime())) {
+        return res.status(400).json({ message: "Data final inválida" });
+      }
+
+      const validatedData = insertStudentWorkoutSchema.parse(body);
       const assignment = await storage.createStudentWorkout(validatedData);
       res.status(201).json(assignment);
     } catch (error) {
@@ -854,10 +864,28 @@ export async function registerRoutes(
       const body = { ...req.body };
       if (body.startTime) body.startTime = new Date(body.startTime);
       if (body.endTime) body.endTime = new Date(body.endTime);
+      if (body.startTime && isNaN(body.startTime.getTime())) {
+        return res.status(400).json({ message: "Data inicial inválida" });
+      }
+      if (body.endTime && isNaN(body.endTime.getTime())) {
+        return res.status(400).json({ message: "Data final inválida" });
+      }
       const validatedData = insertAvailabilitySlotSchema.parse({
         ...body,
         personalId: profile.id,
       });
+
+      const existingSlots = await storage.getSlotsByPersonalId(profile.id);
+      const hasConflict = existingSlots.some(
+        (existing) =>
+          validatedData.startTime < existing.endTime &&
+          validatedData.endTime > existing.startTime
+      );
+      if (hasConflict) {
+        return res.status(409).json({
+          message: "Conflito de horário: este personal já possui um slot sobreposto",
+        });
+      }
 
       const slot = await storage.createAvailabilitySlot(validatedData);
       res.status(201).json(slot);
@@ -963,12 +991,36 @@ export async function registerRoutes(
         }
       }
 
+      const appointmentBody = { ...req.body };
+      if (appointmentBody.startTime) appointmentBody.startTime = new Date(appointmentBody.startTime);
+      if (appointmentBody.endTime) appointmentBody.endTime = new Date(appointmentBody.endTime);
+      if (appointmentBody.startTime && isNaN(appointmentBody.startTime.getTime())) {
+        return res.status(400).json({ message: "Data inicial inválida" });
+      }
+      if (appointmentBody.endTime && isNaN(appointmentBody.endTime.getTime())) {
+        return res.status(400).json({ message: "Data final inválida" });
+      }
+
       const validatedData = insertAppointmentSchema.parse({
-        ...req.body,
+        ...appointmentBody,
         studentId,
         personalId,
         status: "pending",
       });
+
+      const existingAppointments = await storage.getAppointmentsByPersonalId(personalId);
+      const hasConflict = existingAppointments
+        .filter((existing) => existing.status === "pending" || existing.status === "confirmed")
+        .some(
+          (existing) =>
+            validatedData.startTime < existing.endTime &&
+            validatedData.endTime > existing.startTime
+        );
+      if (hasConflict) {
+        return res.status(409).json({
+          message: "Conflito de horário: este personal já possui um agendamento sobreposto",
+        });
+      }
 
       const appointment = await storage.createAppointment(validatedData);
 
