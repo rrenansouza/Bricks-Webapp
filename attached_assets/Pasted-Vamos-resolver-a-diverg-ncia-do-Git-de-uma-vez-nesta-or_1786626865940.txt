@@ -1,0 +1,47 @@
+Vamos resolver a divergência do Git de uma vez, nesta ordem exata. Pare
+e relate se qualquer passo sair diferente do esperado.
+
+PASSO 1 — Pull:
+Rode git pull. Se aparecer conflito em server/routes.ts nos mesmos dois
+blocos de antes (POST /api/student-workouts e POST /api/appointments),
+resolva mantendo o lado HEAD (local) em ambos — ele já contém a
+validação explícita de data inválida que o lado remoto não tem. Remova
+os marcadores de conflito.
+
+Se aparecer conflito em server/seed.ts: verifique se as duas versões
+(local e remota) criam as mesmas 10 personas de personal + 10 de aluno
+com e-mail @brickstest.com. Se sim, mantenha a versão HEAD (local, já
+testada e validada por nós). Se as versões forem diferentes de alguma
+forma relevante, pare e me relate antes de decidir.
+
+package.json e .replit não devem gerar conflito (são só adições) — se
+gerarem, mantenha as duas mudanças (o script "seed" do package.json e
+o módulo python-base-3.13 do .replit).
+
+PASSO 2 — Confirmar que não sobrou nada pendente:
+Rode git status e confirme working tree limpo, sem marcadores de
+conflito em nenhum arquivo.
+
+PASSO 3 — Rodar os 3 testes de regressão do BRK-089 que ainda estavam
+pendentes antes desse imprevisto do Git, usando personas do seed:
+(a) PATCH /api/appointments/:id/status — Marcos Vinícius confirmando
+    agendamento de José Roberto Silva → 200
+(b) PATCH /api/notifications/inbox/:id/read — dono da notificação
+    marcando como lida → 200
+(c) PATCH /api/students/me — José Roberto Silva tentando alterar
+    personalId para outro personal → deve ser ignorado/rejeitado,
+    vínculo original preservado
+
+PASSO 4 — Smoke test do seed (idempotência):
+Rode npm run seed novamente. Confirme que NÃO cria usuários duplicados
+(deve reportar "já existe" para os 20, não criar novos).
+
+PASSO 5 — Se tudo acima passar, finalize o merge com commit e faça push
+para o GitHub.
+
+AO FINAL, relatório único:
+## Relatório — Resolução definitiva do Git + confirmação BRK-089
+- Resultado do pull/merge (o que foi resolvido em cada arquivo)
+- Resultado dos testes (a), (b), (c)
+- Resultado do smoke test de idempotência do seed
+- Confirmação do push
