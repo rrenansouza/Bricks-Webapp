@@ -1,0 +1,100 @@
+Diagnóstico analisado e resolução aprovada.
+
+Você está autorizado a resolver SOMENTE os conflitos existentes em:
+
+server/routes.ts
+
+A decisão é preservar a implementação HEAD/local nos dois blocos conflitantes:
+
+1. POST /api/student-workouts
+2. POST /api/appointments
+
+IMPORTANTE:
+
+- NÃO descarte o restante das alterações trazidas pelo origin/main.
+- NÃO use git checkout --ours no arquivo inteiro.
+- NÃO use git checkout --theirs.
+- NÃO faça reset.
+- NÃO faça rebase.
+- NÃO faça push.
+- NÃO altere arquivos que não estejam relacionados à resolução do merge.
+- Preserve todos os arquivos que o merge já preparou automaticamente:
+  - .replit
+  - package.json
+  - server/seed.ts
+  - attached_assets/Pasted-Vamos-preparar-o-ambiente-e-concluir-pendencias-nesta-o_1786040239188.txt
+
+## Conflito 1 — POST /api/student-workouts
+
+Preserve a versão HEAD/local, incluindo:
+
+- cópia de req.body para body;
+- conversão de startDate para Date;
+- conversão de endDate para Date;
+- validação explícita de Invalid Date;
+- mensagens:
+  "Data inicial inválida"
+  "Data final inválida"
+- validação com insertStudentWorkoutSchema;
+- criação com storage.createStudentWorkout;
+- tratamento de erros existente.
+
+Não substitua essa lógica pela versão origin/main.
+
+## Conflito 2 — POST /api/appointments
+
+Preserve a versão HEAD/local, incluindo:
+
+- cópia de req.body para appointmentBody;
+- conversão de startTime e endTime para Date;
+- validação explícita de Invalid Date;
+- construção de validatedData com studentId, personalId e status "pending";
+- verificação de ownership do aluno pelo Personal;
+- detecção de conflito de horário;
+- consideração de appointments com status "pending" ou "confirmed";
+- retorno HTTP 409 em caso de sobreposição;
+- criação do appointment;
+- notificações existentes;
+- tratamento de erros existente.
+
+Não substitua essa lógica pela versão origin/main.
+
+A versão HEAD/local deve ser considerada a implementação funcional superior nesses dois conflitos.
+
+Após resolver:
+
+1. Remova todos os marcadores de conflito:
+   <<<<<<<
+   =======
+   >>>>>>>
+
+2. Execute:
+   git status
+
+3. Verifique especificamente se:
+   server/routes.ts
+   não aparece mais como "both modified" ou "unmerged".
+
+4. Execute uma busca por marcadores de conflito no arquivo:
+   grep -nE '^(<<<<<<<|=======|>>>>>>>)' server/routes.ts
+
+O resultado esperado é nenhum marcador.
+
+5. Faça uma inspeção do diff do merge:
+   git diff --check
+
+6. NÃO faça commit ainda.
+7. NÃO faça push.
+8. NÃO execute alterações adicionais.
+
+Se houver qualquer erro durante a resolução, pare e informe.
+
+Se tudo estiver correto, apresente:
+
+- status do merge;
+- arquivos modificados/adicionados;
+- confirmação de que não existem conflitos pendentes;
+- resultado do git diff --check;
+- confirmação de que não existem marcadores de conflito.
+
+Depois pare e aguarde nova autorização.
