@@ -1,0 +1,62 @@
+Precisamos resolver o conflito de merge em server/routes.ts, mas NÃO autorize nenhuma alteração ainda.
+
+O merge está pendente e o arquivo conflitante é:
+
+server/routes.ts
+
+Existem dois conflitos:
+
+1. POST /api/student-workouts
+   HEAD: linhas aproximadamente 820–832
+   origin/main: linhas aproximadamente 832–838
+
+2. POST /api/appointments
+   HEAD: linhas aproximadamente 1059–1072
+   origin/main: linhas aproximadamente 1072–1079
+
+IMPORTANTE:
+- NÃO edite server/routes.ts.
+- NÃO resolva os conflitos.
+- NÃO use git checkout --ours.
+- NÃO use git checkout --theirs.
+- NÃO faça commit.
+- NÃO faça push.
+- NÃO aborte o merge.
+- NÃO altere nenhum outro arquivo.
+
+Quero apenas um diagnóstico detalhado dos conflitos.
+
+Para CADA conflito, apresente:
+
+1. O código completo atualmente existente no lado HEAD/local.
+2. O código completo existente no lado origin/main/remoto.
+3. Explique funcionalmente o que cada versão faz.
+4. Identifique quais funcionalidades existem somente no HEAD.
+5. Identifique quais funcionalidades existem somente no origin/main.
+6. Identifique alterações que aparecem em ambos os lados.
+7. Diga se existe alguma alteração de segurança, autorização, validação, ownership, banco de dados, notificações, agenda ou regra de negócio em qualquer uma das versões.
+8. Recomende uma terceira versão consolidada, caso seja necessário combinar as duas lógicas, MAS NÃO aplique essa recomendação ainda.
+
+Também execute somente comandos de leitura para identificar a origem dos dois lados, como:
+
+git show HEAD:server/routes.ts
+
+git show origin/main:server/routes.ts
+
+e, se necessário, mostre apenas os trechos relevantes dos endpoints em conflito.
+
+Não faça nenhuma alteração no repositório.
+
+Ao final, informe claramente:
+
+CONFLITO 1 — /api/student-workouts
+- HEAD:
+- origin/main:
+- Recomendação:
+
+CONFLITO 2 — /api/appointments
+- HEAD:
+- origin/main:
+- Recomendação:
+
+Pare e aguarde minha autorização antes de resolver qualquer conflito.
